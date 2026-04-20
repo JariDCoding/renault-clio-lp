@@ -573,7 +573,7 @@ gltfLoader.load('clio.glb',
 
     console.log('[car] model loaded, bbox min:', JSON.stringify(box.min), 'center:', JSON.stringify(ctr));
     modelReady = true;
-    initHoloViewer();
+    try { initHoloViewer(); } catch(e) { console.error('[holo] init failed:', e); }
 
     if (revealDone) {
       startCarEntry();
@@ -911,12 +911,12 @@ function initHoloViewer() {
   var carHalfH = (bSz0.y / 2) * sc;
   var baseY    = -carHalfH - 0.22;
 
-  holoScene.add(Object.assign(
-    new THREE.Mesh(
-      new THREE.CylinderGeometry(1.2, 1.42, 0.065, 64),
-      new THREE.MeshPhongMaterial({ color: 0x010511, emissive: 0x000924, emissiveIntensity: 2.2, transparent: true, opacity: 0.97 })
-    ), { position: new THREE.Vector3(0, baseY - 0.032, 0) }
-  ));
+  var shadowDisc = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.2, 1.42, 0.065, 64),
+    new THREE.MeshPhongMaterial({ color: 0x010511, emissive: 0x000924, emissiveIntensity: 2.2, transparent: true, opacity: 0.97 })
+  );
+  shadowDisc.position.set(0, baseY - 0.032, 0);
+  holoScene.add(shadowDisc);
 
   (function() {
     var rings = [[1.42, 0.018, 0x1535ff, 0.88], [0.78, 0.012, 0x0d22ee, 0.72], [0.32, 0.010, 0x0f1fdd, 0.80]];
