@@ -99,61 +99,40 @@ const VW = window.innerWidth;
 const VH = window.innerHeight;
 const LOGO_ASPECT = 632 / 833;
 
-const EASE   = 'cubic-bezier(0.77,0,0.175,1)';
-const MARGIN = VW * 0.055;
-
-// Logo: centered on screen, matches the size reveal expects
+// Logo: centered on screen
 const LW_MED = Math.min(VW * 0.30, 420);
 const LH_MED = LW_MED / LOGO_ASPECT;
 const LX_MED = (VW - LW_MED) / 2;
 const LY_MED = (VH - LH_MED) / 2;
 
-// R and C: vertically centered near screen edges, hidden initially
-const FS       = Math.min(VW * 0.17, 220);
-const LETTER_Y = (VH - FS * 0.88) / 2;
-
-rEl.style.cssText    = 'position:absolute;font-size:'+FS+'px;left:'+MARGIN+'px;top:'+LETTER_Y+'px;opacity:0;transition:none';
-cEl.style.cssText    = 'position:absolute;font-size:'+FS+'px;right:'+MARGIN+'px;left:auto;top:'+LETTER_Y+'px;opacity:0;transition:none';
 logoEl.style.cssText = 'position:absolute;left:'+LX_MED+'px;top:'+LY_MED+'px;width:'+LW_MED+'px;height:'+LH_MED+'px;opacity:0;transition:none';
 
-// Loading bar — positioned below the centered logo
-var barW = Math.min(VW * 0.28, 300);
-var barTop = LY_MED + LH_MED + 28; // 28px below logo bottom edge
+// Loading bar — directly below logo
+var barW    = Math.min(VW * 0.28, 300);
+var barTop  = LY_MED + LH_MED + 28;
 var loadWrap = document.createElement('div');
-loadWrap.style.cssText = 'position:absolute;left:50%;transform:translateX(-50%);top:'+barTop+'px;width:'+barW+'px;opacity:0;transition:opacity 0.6s ease;display:flex;flex-direction:column;align-items:center;gap:10px';
+loadWrap.style.cssText = 'position:absolute;left:50%;transform:translateX(-50%);top:'+barTop+'px;width:'+barW+'px;opacity:0;transition:opacity 0.5s ease;display:flex;flex-direction:column;align-items:center;gap:10px';
 var loadPct  = document.createElement('div');
 loadPct.style.cssText  = 'font-family:"NouvelR",sans-serif;font-size:11px;font-weight:600;letter-spacing:0.22em;color:rgba(255,255,255,0.55);text-transform:uppercase';
 loadPct.textContent = 'LADEN 0%';
 var loadBar  = document.createElement('div');
 var loadFill = document.createElement('div');
 loadBar.style.cssText  = 'width:100%;height:2px;background:rgba(255,255,255,0.15);overflow:hidden;border-radius:2px';
-loadFill.style.cssText = 'height:100%;width:0%;background:#fff;transition:width 0.35s ease;border-radius:2px';
+loadFill.style.cssText = 'height:100%;width:0%;background:#fff;transition:width 0.3s ease;border-radius:2px';
 loadBar.appendChild(loadFill);
 loadWrap.appendChild(loadPct);
 loadWrap.appendChild(loadBar);
 introEl.appendChild(loadWrap);
 
-// 200ms: everything fades in together — logo already centered, R/C on sides
+// Fade logo + bar in immediately
 setTimeout(function() {
-  rEl.style.transition    = 'opacity 0.9s ease';
-  cEl.style.transition    = 'opacity 0.9s ease';
-  logoEl.style.transition = 'opacity 0.9s ease';
-  void rEl.offsetWidth;
-  rEl.style.opacity    = '1';
-  cEl.style.opacity    = '1';
+  logoEl.style.transition = 'opacity 0.8s ease';
+  void logoEl.offsetWidth;
   logoEl.style.opacity = '1';
   loadWrap.style.opacity = '1';
-}, 200);
+}, 100);
 
-// 1700ms: R and C fade out — logo stays centered
-setTimeout(function() {
-  rEl.style.transition = 'opacity 0.7s ease';
-  cEl.style.transition = 'opacity 0.7s ease';
-  rEl.style.opacity = '0';
-  cEl.style.opacity = '0';
-}, 1700);
-
-let introTimerDone = false;
+let introTimerDone = true; // no minimum wait — reveal fires as soon as car is loaded
 let modelReady     = false;
 let revealDone     = false;
 
@@ -204,7 +183,6 @@ function tryReveal() {
   }, 1500);
 }
 
-setTimeout(function() { introTimerDone = true; tryReveal(); }, 3600);
 
 const canvas = document.getElementById('webgl');
 const scene  = new THREE.Scene();
