@@ -75,11 +75,11 @@ linear-gradient(to bottom,rgba(0,0,0,0.65) 0%,transparent 18%),linear-gradient(t
             class="gauge-arc" transform="rotate(150 70 70)" filter="url(#arc-glow)"/> <!-- Labels --> <text x="13"  y="113" text-anchor="middle" fill="rgba(0,0,0,0.28)" font-size="8.5" font-weight="600">0</text> <text x="70"  y="7"   text-anchor="middle" fill="rgba(0,0,0,0.28)" font-size="8.5" font-weight="600">100</text> <text x="127" y="113" text-anchor="middle" fill="rgba(0,0,0,0.28)" font-size="8.5" font-weight="600">200</text> <!-- Center readout --> <text x="70" y="67" text-anchor="middle" fill="#0a0a0a" font-size="30" font-weight="800" letter-spacing="-1.5">178</text> <text x="70" y="79" text-anchor="middle" fill="rgba(0,0,0,0.38)" font-size="7.5" font-weight="700" letter-spacing="2">KM/U</text> </svg> </div> </div> </div> <!-- Bottom-left spec strip + CTA --> <div class="spec-strip-group"> <div class="spec-strip"> <div class="spec-item"> <span class="spec-label">E-Tech Hybrid</span> <span class="spec-value">145 HP</span> </div> <div class="spec-sep"></div> <div class="spec-item"> <span class="spec-label">Actieradius</span> <span class="spec-value">Tot 900 km</span> </div> <div class="spec-sep"></div> <div class="spec-item"> <span class="spec-label">Vanaf</span> <span class="spec-value">€23.990</span> </div> </div> <a href="#" class="hero-cta-btn">Boek een testrit</a> </div>
 </div> <!-- FINAL CTA SECTION — fades in after gallery, car turns to face viewer -->
 <div id="final-cta" aria-hidden="true"> <div class="fcta-inner"> <span class="fcta-tag">RENAULT CLIO E-TECH</span> <h2 class="fcta-heading">Maak de Clio<br>de jouwe</h2> <p class="fcta-sub">Volledig elektrisch rijden in de stad. Ontworpen om op te vallen.</p> <div class="fcta-btns"> <a href="#" class="fcta-btn-primary">Boek een testrit</a> <a href="#" class="fcta-btn-secondary">Configureer je Clio</a> </div> </div>
-</div> <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script> <script>
+</div> <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/loaders/DRACOLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/loaders/RGBELoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/controls/OrbitControls.js"></script> <script>
 'use strict';
 
 const introEl   = document.getElementById('intro');
@@ -455,7 +455,7 @@ function startCarEntry() {
 const gltfLoader = new THREE.GLTFLoader();
 try {
   const dracoLoader = new THREE.DRACOLoader();
-  dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/');
+  dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/libs/draco/');
   dracoLoader.setDecoderConfig({ type: 'js' });
   gltfLoader.setDRACOLoader(dracoLoader);
   console.log('[car] DRACOLoader ready');
