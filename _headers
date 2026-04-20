@@ -7,6 +7,10 @@
   Cache-Control: public, max-age=31536000, immutable
   Content-Type: model/gltf-binary
 
+/*.wasm
+  Cache-Control: public, max-age=31536000, immutable
+  Content-Type: application/wasm
+
 /*.hdr
   Cache-Control: public, max-age=31536000, immutable
 

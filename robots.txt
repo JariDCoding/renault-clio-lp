@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://renault-clio-lp.pages.dev/sitemap.xml
