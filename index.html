@@ -633,6 +633,7 @@ var totalTime = 0;
   if (entryActive && carRig) {
     entryElapsed += dt;
     entryT = Math.min(entryElapsed / ENTRY_DURATION, 1);
+    if (!scrollEnabled && entryElapsed >= 2.0) scrollEnabled = true;
 
     var ease = 1 - Math.pow(1 - entryT, 4);
     var u = 1 - ease;
