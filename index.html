@@ -478,11 +478,24 @@ gltfLoader.load('clio.glb',
       child.castShadow    = true;
       child.receiveShadow = true;
       if (child.material) {
-        child.material.envMapIntensity = 1.6;
-        carMaterials.push(child.material);
         if (child.material.name === 'CarPaint.002') {
-          child.material.color.set(0x060c2a); // dark midnight navy blue
-          child.material.roughness = 0.10;    // very glossy so dark color shows depth
+          // Replace with fresh material — r140 now reads KHR_clearcoat/specular/ior from GLB
+          // which washes out any color we try to set in-place. Full replacement wins.
+          var cpMat = new THREE.MeshPhysicalMaterial({
+            color: 0x060c2a,
+            roughness: 0.10,
+            metalness: 0.0,
+            clearcoat: 0.9,
+            clearcoatRoughness: 0.04,
+            reflectivity: 0.5,
+            envMapIntensity: 1.6
+          });
+          cpMat.name = 'CarPaint.002';
+          child.material = cpMat;
+          carMaterials.push(cpMat);
+        } else {
+          child.material.envMapIntensity = 1.6;
+          carMaterials.push(child.material);
         }
         if (child.material.name === 'NumberPlate.002') {
           var pcv = document.createElement('canvas');
