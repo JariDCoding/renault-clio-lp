@@ -583,7 +583,7 @@ gltfLoader.load('clio.glb',
   },
   function(xhr) {
     if (xhr.total > 0) {
-      var pct = Math.round(xhr.loaded / xhr.total * 100);
+      var pct = Math.min(Math.round(xhr.loaded / xhr.total * 100), 95);
       loadFill.style.width = pct + '%';
       loadPct.textContent = 'LADEN ' + pct + '%';
     }
