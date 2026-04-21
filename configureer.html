@@ -164,102 +164,108 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0A0A0A;
   box-shadow:0 8px 32px rgba(8,18,70,0.40);transition:opacity .15s,transform .15s}
 .s2-cta:hover{opacity:0.9;transform:translateY(-2px)}
 
-/* ── Step 3: Contact modal ────────────────────────────────── */
+/* ── Step 3: Contact modal — liquid glass ─────────────────── */
 #cfg-step3{position:fixed;inset:0;z-index:60;
   display:flex;align-items:center;justify-content:center;
   padding:20px;
-  background:rgba(4,8,30,0.72);
-  backdrop-filter:blur(18px) saturate(1.3);
-  -webkit-backdrop-filter:blur(18px) saturate(1.3);
+  background:rgba(0,0,0,0.18);
+  backdrop-filter:none;-webkit-backdrop-filter:none;
   opacity:0;pointer-events:none;transition:opacity 0.35s ease}
 #cfg-step3.open{opacity:1;pointer-events:auto}
 #cfg-step3.open .s3-card{transform:scale(1) translateY(0)}
 
-/* Apple-style frosted sheet — solid enough to read on any background */
+/* Liquid glass card — Clio visible through it */
 .s3-card{width:100%;max-width:500px;max-height:92vh;overflow-y:auto;
   border-radius:28px;
-  background:rgba(247,248,252,0.97);
-  border:1px solid rgba(255,255,255,0.98);
+  background:rgba(255,255,255,0.10);
+  backdrop-filter:blur(56px) saturate(2.0) brightness(1.12);
+  -webkit-backdrop-filter:blur(56px) saturate(2.0) brightness(1.12);
+  border:1px solid rgba(255,255,255,0.26);
   box-shadow:
-    0 48px 96px rgba(0,0,0,0.48),
-    0 12px 32px rgba(0,0,0,0.22),
-    inset 0 1.5px 0 rgba(255,255,255,1),
-    inset 0 -1px 0 rgba(0,0,0,0.04);
+    0 48px 96px rgba(0,0,0,0.45),
+    0 8px 28px rgba(0,0,0,0.22),
+    inset 0 1.5px 0 rgba(255,255,255,0.42),
+    inset 0 -1px 0 rgba(255,255,255,0.06);
   padding:32px 28px 28px;position:relative;
   transform:scale(0.95) translateY(12px);
   transition:transform 0.42s cubic-bezier(0.34,1.56,0.64,1)}
 
-/* Close ✕ — pill-shaped with hover fill */
+/* Close ✕ */
 .s3-close{position:absolute;top:16px;right:16px;
-  background:rgba(0,0,0,0.055);border:none;
-  color:rgba(0,0,0,0.38);font-size:14px;font-weight:600;cursor:pointer;
+  background:rgba(255,255,255,0.12);border:none;
+  color:rgba(255,255,255,0.60);font-size:14px;font-weight:600;cursor:pointer;
   width:30px;height:30px;display:flex;align-items:center;justify-content:center;
   border-radius:50%;transition:background .2s,color .2s;line-height:1}
-.s3-close:hover{background:rgba(0,0,0,0.10);color:rgba(0,0,0,0.60)}
+.s3-close:hover{background:rgba(255,255,255,0.22);color:#fff}
 
 /* Step label */
 .s3-eyebrow{font-size:9px;font-weight:700;letter-spacing:0.26em;text-transform:uppercase;
-  color:rgba(6,8,20,0.32);margin-bottom:6px;display:block}
+  color:rgba(255,255,255,0.45);margin-bottom:6px;display:block}
 
 /* Title */
 .s3-title{font-size:clamp(22px,3.5vw,28px);font-weight:800;letter-spacing:-0.022em;
-  color:#06080f;margin-bottom:4px;line-height:1.1}
+  color:#fff;margin-bottom:4px;line-height:1.1}
 
 /* Subtitle */
-.s3-sub{font-size:12.5px;color:rgba(6,8,20,0.45);margin-bottom:22px;line-height:1.55}
+.s3-sub{font-size:12.5px;color:rgba(255,255,255,0.58);margin-bottom:22px;line-height:1.55}
 
 /* Config summary chip */
 .s3-summary-row{display:flex;align-items:center;gap:10px;margin-bottom:22px;
   padding:11px 14px;
-  background:rgba(8,18,70,0.04);
+  background:rgba(255,255,255,0.08);
   border-radius:12px;
-  border:1px solid rgba(8,18,70,0.07)}
+  border:1px solid rgba(255,255,255,0.14)}
 .s3-summary-dot{width:20px;height:20px;border-radius:50%;flex-shrink:0;
-  box-shadow:0 2px 8px rgba(0,0,0,0.25)}
-.s3-summary-text{font-size:11px;color:rgba(6,8,20,0.45);line-height:1.5}
-.s3-summary-text strong{color:#06080f;font-size:12.5px;font-weight:700;display:block;margin-bottom:1px}
+  box-shadow:0 2px 8px rgba(0,0,0,0.40)}
+.s3-summary-text{font-size:11px;color:rgba(255,255,255,0.52);line-height:1.5}
+.s3-summary-text strong{color:rgba(255,255,255,0.90);font-size:12.5px;font-weight:700;display:block;margin-bottom:1px}
 
 /* Form */
 .cfg-form{display:flex;flex-direction:column;gap:12px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .form-field{display:flex;flex-direction:column;gap:5px}
 .form-field label{font-size:9px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;
-  color:rgba(6,8,20,0.40)}
+  color:rgba(255,255,255,0.48)}
 
-/* Inputs — solid white, Apple-style */
+/* Inputs — glass style */
 .form-field input,.form-field select{
   padding:13px 14px;border-radius:12px;
-  border:1.5px solid rgba(0,0,0,0.09);
-  background:#fff;
-  font-family:'NouvelR',sans-serif;font-size:14px;font-weight:500;color:#06080f;
+  border:1.5px solid rgba(255,255,255,0.18);
+  background:rgba(255,255,255,0.10);
+  font-family:'NouvelR',sans-serif;font-size:14px;font-weight:500;color:#fff;
   outline:none;
-  transition:border-color .18s,box-shadow .18s;
+  transition:border-color .18s,box-shadow .18s,background .18s;
   -webkit-appearance:none;appearance:none}
 .form-field input:focus,.form-field select:focus{
-  border-color:rgba(12,27,90,0.38);
-  box-shadow:0 0 0 3.5px rgba(12,27,90,0.10)}
-.form-field input::placeholder{color:rgba(6,8,20,0.28)}
-.form-field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2306080f' stroke-opacity='.35' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  border-color:rgba(255,255,255,0.50);
+  background:rgba(255,255,255,0.14);
+  box-shadow:0 0 0 3px rgba(255,255,255,0.10)}
+.form-field input::placeholder{color:rgba(255,255,255,0.30)}
+.form-field select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23ffffff' stroke-opacity='.50' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+.form-field select option{background:#0d1b3e;color:#fff}
 
 /* Submit CTA */
 .s3-submit{margin-top:6px;padding:16px;border-radius:14px;width:100%;
-  background:linear-gradient(135deg,#0c1b5a 0%,#1e3182 100%);
+  background:linear-gradient(135deg,rgba(255,255,255,0.22) 0%,rgba(255,255,255,0.10) 100%);
+  backdrop-filter:blur(8px);
   color:#fff;font-family:'NouvelR',sans-serif;font-size:15px;font-weight:800;
-  letter-spacing:0.04em;border:none;cursor:pointer;
-  box-shadow:0 8px 28px rgba(8,18,70,0.35),inset 0 1px 0 rgba(255,255,255,0.14);
+  letter-spacing:0.04em;border:1.5px solid rgba(255,255,255,0.32);cursor:pointer;
+  box-shadow:0 4px 20px rgba(0,0,0,0.25),inset 0 1px 0 rgba(255,255,255,0.30);
   transition:opacity .15s,transform .15s,box-shadow .15s}
-.s3-submit:hover{opacity:0.92;transform:translateY(-1px);box-shadow:0 12px 36px rgba(8,18,70,0.42)}
+.s3-submit:hover{opacity:0.92;transform:translateY(-1px);box-shadow:0 8px 32px rgba(0,0,0,0.35)}
 
 /* Success state */
 .s3-success{display:none;flex-direction:column;align-items:center;text-align:center;gap:14px;padding:24px 0}
 .s3-success-icon{width:56px;height:56px;
-  background:linear-gradient(135deg,#0c1b5a,#1e3182);
+  background:rgba(255,255,255,0.16);
+  border:1px solid rgba(255,255,255,0.30);
   border-radius:50%;display:flex;align-items:center;justify-content:center;
-  box-shadow:0 8px 24px rgba(8,18,70,0.30)}
+  box-shadow:0 8px 24px rgba(0,0,0,0.25)}
 .s3-success-icon svg{width:26px;height:26px;stroke:#fff;stroke-width:2.5}
-.s3-success h3{font-size:22px;font-weight:800;color:#06080f;letter-spacing:-0.02em}
-.s3-success p{font-size:13px;color:rgba(6,8,20,0.50);line-height:1.65;max-width:300px}
+.s3-success h3{font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.02em}
+.s3-success p{font-size:13px;color:rgba(255,255,255,0.58);line-height:1.65;max-width:300px}
 
 /* Responsive */
 @media(max-width:768px){
