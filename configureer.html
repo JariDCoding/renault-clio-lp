@@ -158,167 +158,129 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0A0A0A;
 
 </div><!-- /cfg-ui -->
 
-<!-- Three.js r140 (same version as main page for Draco compat) -->
+<!-- Three.js r140 — identical to main page -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/loaders/DRACOLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/loaders/RGBELoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/controls/OrbitControls.js"></script>
 
 <script>
 'use strict';
 
-// ── Renderer ─────────────────────────────────────────────────────
-const canvas = document.getElementById('cfg-cv');
-const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+var isMobile = window.innerWidth <= 768;
+
+// ── Renderer — identical flags to index.html ──────────────────────
+var canvas   = document.getElementById('cfg-cv');
+var renderer = new THREE.WebGLRenderer({
+  canvas: canvas, antialias: true,
+  powerPreference: 'high-performance', precision: 'highp'
+});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.outputEncoding = THREE.sRGBEncoding;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.25;
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled       = true;
+renderer.shadowMap.type          = THREE.PCFSoftShadowMap;
+renderer.physicallyCorrectLights = true;
+renderer.toneMapping             = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure     = isMobile ? 0.82 : 0.70;
+renderer.outputEncoding          = THREE.sRGBEncoding;
 
 // ── Scene ─────────────────────────────────────────────────────────
-const scene = new THREE.Scene();
+var scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0A0A0A);
-scene.fog = new THREE.FogExp2(0x0A0A0A, 0.045);
 
 // ── Camera ────────────────────────────────────────────────────────
-const isMobile = window.innerWidth <= 768;
-const camera = new THREE.PerspectiveCamera(
-  isMobile ? 52 : 42,
+var camera = new THREE.PerspectiveCamera(
+  isMobile ? 48 : 38,
   window.innerWidth / window.innerHeight,
   0.05, 200
 );
-camera.position.set(0, 1.6, isMobile ? 6.5 : 5.8);
+camera.position.set(0, 1.5, isMobile ? 6.8 : 6.0);
 
 // ── Controls ──────────────────────────────────────────────────────
-const controls = new THREE.OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.07;
-controls.enablePan = false;
-controls.minDistance = isMobile ? 4.0 : 3.5;
-controls.maxDistance = isMobile ? 10 : 8;
-// Lock to Y-axis rotation — tight polar range
-controls.minPolarAngle = Math.PI * 0.28;
-controls.maxPolarAngle = Math.PI * 0.42;
-controls.autoRotate = true;
-controls.autoRotateSpeed = 0.6;
-controls.target.set(0, 0.45, 0);
+var controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping    = true;
+controls.dampingFactor    = 0.06;
+controls.enablePan        = false;
+controls.minDistance      = isMobile ? 4.5 : 3.8;
+controls.maxDistance      = isMobile ? 10  : 8.5;
+controls.minPolarAngle    = Math.PI * 0.28;  // Y-axis only — tight vertical lock
+controls.maxPolarAngle    = Math.PI * 0.42;
+controls.autoRotate       = true;
+controls.autoRotateSpeed  = 0.65;
+controls.target.set(0, 0.55, 0);
 controls.update();
 
-// ── Lighting ──────────────────────────────────────────────────────
-// Ambient
-scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+// ── Lighting — same values as index.html ─────────────────────────
+var ambLight = new THREE.AmbientLight(0xffffff, 0.18);
+scene.add(ambLight);
 
-// Key light (top-right front)
-const keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
-keyLight.position.set(5, 8, 4);
-keyLight.castShadow = true;
-keyLight.shadow.mapSize.set(2048, 2048);
-keyLight.shadow.camera.near = 0.5;
-keyLight.shadow.camera.far = 30;
-keyLight.shadow.camera.left = -6;
-keyLight.shadow.camera.right = 6;
-keyLight.shadow.camera.top = 6;
-keyLight.shadow.camera.bottom = -6;
-keyLight.shadow.bias = -0.0005;
-scene.add(keyLight);
+var key = new THREE.DirectionalLight(0xffffff, 1.6);
+key.position.set(-6, 4.5, 3);
+key.castShadow = true;
+key.shadow.mapSize.set(isMobile ? 1024 : 2048, isMobile ? 1024 : 2048);
+key.shadow.camera.left = key.shadow.camera.bottom = -9;
+key.shadow.camera.right = key.shadow.camera.top   =  9;
+key.shadow.bias = -0.0002; key.shadow.normalBias = 0.02; key.shadow.radius = 3;
+scene.add(key);
 
-// Fill light (left, cooler)
-const fillLight = new THREE.DirectionalLight(0xb0ceff, 0.75);
-fillLight.position.set(-6, 3, 3);
-scene.add(fillLight);
-
-// Rim light (back, tight specular edge)
-const rimLight = new THREE.DirectionalLight(0xffffff, 1.6);
-rimLight.position.set(0, 4, -7);
+var rimLight = new THREE.DirectionalLight(0x8ab0ff, 0.7);
+rimLight.position.set(5, 3.5, -5);
 scene.add(rimLight);
 
-// ── Ground reflection plane ───────────────────────────────────────
-const groundMat = new THREE.MeshStandardMaterial({
-  color: 0x0d0d0d,
-  roughness: 0.15,
-  metalness: 0.85
-});
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(24, 24), groundMat);
-ground.rotation.x = -Math.PI / 2;
-ground.position.y = 0;
-ground.receiveShadow = true;
-scene.add(ground);
+var fillLight = new THREE.DirectionalLight(0xffffff, 0.25);
+fillLight.position.set(0, 4, 4);
+scene.add(fillLight);
 
-// Radial fade vignette on ground
-const fadeGeo = new THREE.PlaneGeometry(24, 24, 1, 1);
-const fadeMat = new THREE.MeshBasicMaterial({
-  color: 0x0A0A0A, transparent: true, opacity: 0.72, depthWrite: false
+var bounceLight = new THREE.DirectionalLight(0x8898cc, 0.12);
+bounceLight.position.set(0, -4, 1);
+scene.add(bounceLight);
+
+// ── Environment map (HDR IBL) — identical to index.html ──────────
+var pmrem = new THREE.PMREMGenerator(renderer);
+pmrem.compileEquirectangularShader();
+
+new THREE.RGBELoader()
+  .setDataType(isMobile ? THREE.HalfFloatType : THREE.FloatType)
+  .load('env.hdr', function(hdr) {
+    var envMap = pmrem.fromEquirectangular(hdr).texture;
+    scene.environment = envMap;
+    hdr.dispose(); pmrem.dispose();
+  }, undefined, function(e) {
+    console.warn('[cfg] env.hdr failed, falling back to direct lights only:', e);
+    pmrem.dispose();
+    ambLight.intensity  = 1.2;
+    key.intensity       = 8.0;
+    rimLight.intensity  = 3.5;
+    fillLight.intensity = 1.5;
+  });
+
+// ── Dark studio floor ─────────────────────────────────────────────
+var floorMat = new THREE.MeshStandardMaterial({
+  color: 0x111111, roughness: 0.18, metalness: 0.80, envMapIntensity: 0.4
 });
-const fadePlane = new THREE.Mesh(fadeGeo, fadeMat);
-fadePlane.rotation.x = -Math.PI / 2;
-fadePlane.position.y = 0.002;
-scene.add(fadePlane);
+var floor = new THREE.Mesh(new THREE.PlaneGeometry(28, 28), floorMat);
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+scene.add(floor);
 
 // ── Color system ──────────────────────────────────────────────────
-const PALETTE = {
+var PALETTE = {
   '#1B3A6B': new THREE.Color(0x1B3A6B),
   '#C0392B': new THREE.Color(0xC0392B),
   '#F5C518': new THREE.Color(0xF5C518)
 };
 
-var bodyMeshes   = [];
-var fromColor    = new THREE.Color(0x1B3A6B);
-var toColor      = new THREE.Color(0x1B3A6B);
-var currentColor = new THREE.Color(0x1B3A6B);
-var lerpT        = 1;
-var activeHex    = '#1B3A6B';
-var LERP_DUR     = 0.6;  // seconds
+var paintMat    = null;   // replaced MeshPhysical on CarPaint.002
+var fromColor   = new THREE.Color(0x1B3A6B);
+var toColor     = new THREE.Color(0x1B3A6B);
+var curColor    = new THREE.Color(0x1B3A6B);
+var lerpT       = 1;
+var activeHex   = '#1B3A6B';
+var LERP_DUR    = 0.6;
 
-// Keywords that identify the car body paint mesh
-var BODY_RE    = /body|exterior|paint|lacquer|car[_\s]?body|carosserie|karosserie|metallic|main|colour/i;
-var EXCLUDE_RE = /wheel|tyre|tire|glass|window|windshield|chrome|light|lamp|head|tail|brake|interior|seat|cabin|dashboard|steering|rubber|plate|number|badge|emblem|trim/i;
-
-function detectBodyMeshes(root) {
-  var named = [];
-  var all   = [];
-
-  root.traverse(function(obj) {
-    if (!obj.isMesh || !obj.geometry) return;
-    var matName  = Array.isArray(obj.material)
-      ? obj.material.map(function(m){ return m.name || ''; }).join(' ')
-      : (obj.material ? obj.material.name || '' : '');
-    var combined = (obj.name + ' ' + matName).toLowerCase();
-    var verts    = obj.geometry.attributes.position
-      ? obj.geometry.attributes.position.count : 0;
-
-    console.log('[cfg] mesh:', obj.name, '| mat:', matName, '| verts:', verts);
-    all.push({ obj: obj, name: combined, verts: verts });
-
-    if (BODY_RE.test(combined) && !EXCLUDE_RE.test(combined)) {
-      named.push(obj);
-    }
-  });
-
-  if (named.length > 0) {
-    console.log('[cfg] Body meshes (by name):', named.map(function(m){ return m.name; }));
-    return named;
-  }
-
-  // Fallback: top-3 largest non-excluded meshes
-  all.sort(function(a, b){ return b.verts - a.verts; });
-  var fallback = all
-    .filter(function(m){ return !EXCLUDE_RE.test(m.name); })
-    .slice(0, 3)
-    .map(function(m){ return m.obj; });
-  console.log('[cfg] Body meshes (fallback):', fallback.map(function(m){ return m.name; }));
-  return fallback;
-}
-
-function applyColor(color) {
-  bodyMeshes.forEach(function(mesh) {
-    var mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-    mats.forEach(function(mat) {
-      if (mat && mat.color) mat.color.set(color);
-    });
-  });
+function applyColor(c) {
+  if (paintMat) paintMat.color.set(c);
 }
 
 // ── GLB loading ───────────────────────────────────────────────────
@@ -336,29 +298,46 @@ gltfLoader.load(
   function onLoad(gltf) {
     var car = gltf.scene;
 
-    // Center and scale
-    var box    = new THREE.Box3().setFromObject(car);
-    var center = box.getCenter(new THREE.Vector3());
-    var size   = box.getSize(new THREE.Vector3());
+    // Same centering logic as index.html
+    var box = new THREE.Box3().setFromObject(car);
+    var ctr = new THREE.Vector3();
+    box.getCenter(ctr);
+    car.position.set(-ctr.x, -box.min.y, -ctr.z);
 
-    car.position.sub(center);
-    var maxDim = Math.max(size.x, size.y, size.z);
-    if (maxDim > 0) car.scale.setScalar(3.8 / maxDim);
+    car.traverse(function(child) {
+      if (!child.isMesh) return;
+      child.castShadow    = true;
+      child.receiveShadow = true;
 
-    // Re-compute after scale to sit on ground
-    var box2 = new THREE.Box3().setFromObject(car);
-    car.position.y -= box2.min.y;
+      if (!child.material) return;
 
-    car.traverse(function(obj) {
-      if (obj.isMesh) {
-        obj.castShadow = true;
-        obj.receiveShadow = true;
+      if (child.material.name === 'CarPaint.002') {
+        // Upgrade to MeshPhysicalMaterial with clearcoat — same as index.html
+        var newMat = isMobile
+          ? new THREE.MeshStandardMaterial({
+              color:           new THREE.Color(0x1B3A6B),
+              roughness:       0.10,
+              metalness:       0.12,
+              envMapIntensity: 2.2
+            })
+          : new THREE.MeshPhysicalMaterial({
+              color:              new THREE.Color(0x1B3A6B),
+              roughness:          0.10,
+              metalness:          0.0,
+              clearcoat:          0.9,
+              clearcoatRoughness: 0.04,
+              reflectivity:       0.5,
+              envMapIntensity:    1.6
+            });
+        newMat.name  = 'CarPaint.002';
+        paintMat     = newMat;
+        child.material = newMat;
+      } else {
+        child.material.envMapIntensity = 1.6;
       }
     });
 
     scene.add(car);
-    bodyMeshes = detectBodyMeshes(car);
-    applyColor(currentColor);
 
     // Reveal
     loaderBar.style.width = '100%';
@@ -375,8 +354,7 @@ gltfLoader.load(
     }
   },
   function onError(err) {
-    console.error('[cfg] GLB load failed:', err);
-    // Still reveal so user isn't stuck
+    console.error('[cfg] GLB load error:', err);
     document.getElementById('cfg-loader').classList.add('fade');
     canvas.classList.add('visible');
   }
@@ -390,11 +368,9 @@ swatches.forEach(function(sw) {
     var hex = sw.dataset.hex;
     if (hex === activeHex) return;
     activeHex = hex;
-
     swatches.forEach(function(s){ s.classList.remove('active'); });
     sw.classList.add('active');
-
-    fromColor.copy(currentColor);
+    fromColor.copy(curColor);
     toColor.copy(PALETTE[hex]);
     lerpT = 0;
   });
@@ -402,15 +378,11 @@ swatches.forEach(function(sw) {
 
 // ── Auto-rotate pause on interaction ─────────────────────────────
 var rotateTimer = null;
-
 function pauseRotate() {
   controls.autoRotate = false;
   if (rotateTimer) clearTimeout(rotateTimer);
-  rotateTimer = setTimeout(function() {
-    controls.autoRotate = true;
-  }, 3000);
+  rotateTimer = setTimeout(function(){ controls.autoRotate = true; }, 3000);
 }
-
 renderer.domElement.addEventListener('pointerdown', pauseRotate, { passive: true });
 
 // ── Resize ────────────────────────────────────────────────────────
@@ -425,16 +397,14 @@ var lastNow = 0;
 
 function tick(now) {
   requestAnimationFrame(tick);
-
   var dt = Math.min((now - lastNow) / 1000, 0.05);
   lastNow = now;
 
-  // Smooth color lerp
   if (lerpT < 1) {
     lerpT = Math.min(lerpT + dt / LERP_DUR, 1);
-    var eased = 1 - Math.pow(1 - lerpT, 3); // ease-out cubic
-    currentColor.lerpColors(fromColor, toColor, eased);
-    applyColor(currentColor);
+    var eased = 1 - Math.pow(1 - lerpT, 3);
+    curColor.lerpColors(fromColor, toColor, eased);
+    applyColor(curColor);
   }
 
   controls.update();
