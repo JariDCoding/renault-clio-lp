@@ -58,13 +58,13 @@ linear-gradient(to bottom,rgba(0,0,0,0.65) 0%,transparent 18%),linear-gradient(t
 <style>
 /* ── MOBILE UI ADDITIONS ───────────────────────────────── */
 
-/* Ground vignette — cinematic depth beneath the car */
+/* Ground vignette */
 #m-ground-vgn{display:none;position:fixed;inset:0;z-index:2;pointer-events:none;
-  background:radial-gradient(ellipse 130% 52% at 50% 115%,rgba(4,6,14,0.40) 0%,transparent 65%)}
+  background:radial-gradient(ellipse 130% 52% at 50% 115%,rgba(4,6,14,0.38) 0%,transparent 65%)}
 
-/* Scroll hint — sits above the spec card */
-#m-scroll-hint{display:none;position:fixed;bottom:clamp(250px,32vh,310px);left:50%;
-  transform:translateX(-50%);z-index:51;pointer-events:none;
+/* Scroll hint — right edge, vertically centred */
+#m-scroll-hint{display:none;position:fixed;right:18px;top:50%;
+  transform:translateY(-55%);z-index:51;pointer-events:none;
   flex-direction:column;align-items:center;gap:6px;opacity:0;transition:opacity 1s ease}
 #m-scroll-hint.visible{opacity:1}
 #m-scroll-hint .sh-label{font-family:'NouvelR',sans-serif;font-size:9px;font-weight:700;
@@ -83,26 +83,74 @@ linear-gradient(to bottom,rgba(0,0,0,0.65) 0%,transparent 18%),linear-gradient(t
   opacity:0;transform:scale(0);transition:transform 0.5s ease,opacity 0.5s ease;pointer-events:none}
 .hero-cta-btn:active::after{opacity:1;transform:scale(2);transition:transform 0.1s ease,opacity 0.1s ease}
 
+/* ── All mobile ≤768px ───────────────────────────────── */
 @media(max-width:768px){
-  /* Remove duplicate nav CTA */
   .pill-cta{display:none!important}
-
-  /* Show cinematic ground vignette and scroll hint */
   #m-ground-vgn{display:block}
   #m-scroll-hint{display:flex}
 
-  /* Full-width CTA with better sizing */
-  .hero-cta-btn{font-size:15px!important;padding:16px 0!important;
-    width:100%!important;text-align:center!important;
-    justify-content:center!important;letter-spacing:0.04em!important;border-radius:14px!important}
+  /* Full-width CTA */
+  .hero-cta-btn{font-size:15px!important;padding:16px 0!important;width:100%!important;
+    text-align:center!important;justify-content:center!important;
+    letter-spacing:0.04em!important;border-radius:14px!important}
 
-  /* Spec strip group stretches edge to edge */
+  /* Group stretches edge to edge */
   .spec-strip-group{right:20px!important;align-items:stretch!important}
 
-  /* Compact spec strip — less tall, original liquid glass preserved */
-  .spec-strip{gap:8px!important;padding:10px 16px!important}
+  /* More opaque so card reads as white glass even over dark 3D background */
+  .spec-strip{gap:8px!important;padding:10px 16px!important;
+    background:rgba(255,255,255,0.72)!important}
   .spec-value{font-size:17px!important}
   .spec-label{font-size:9px!important}
+}
+
+/* ── Chamber stats — single row on phones ≥375px ────── */
+@media(min-width:375px) and (max-width:768px){
+  .chamber-grid{grid-template-columns:repeat(4,1fr)!important}
+  /* Restore right-border on item 2 (was removed for 2×2 layout) */
+  .chamber-stat:nth-child(2){border-right:1px solid rgba(255,255,255,0.08)!important}
+  /* Remove top-border added for 2×2 rows */
+  .chamber-stat:nth-child(3),.chamber-stat:nth-child(4){border-top:none!important}
+  .chamber-stat{padding:12px 4px 10px!important;align-items:center!important}
+  .chamber-label{font-size:7px!important;letter-spacing:0.12em!important;
+    text-align:center!important;margin-bottom:5px!important;line-height:1.4!important}
+  .chamber-num-wrap{justify-content:center!important}
+  .chamber-big-num{font-size:clamp(22px,5.8vw,30px)!important;text-align:center!important}
+  .chamber-unit{font-size:8px!important;letter-spacing:0.12em!important}
+}
+
+/* ── Desktop watermark — bigger, covering the top ───── */
+@media(min-width:769px){
+  .wm-logo{width:100vw!important;left:50%!important;
+    top:-8%!important;transform:translateX(-50%)!important}
+}
+
+/* ── Small phones: iPhone SE / 375px / height ≤ 740px ── */
+@media(max-width:430px) and (max-height:740px){
+  /* Tighter bottom anchor */
+  .spec-strip-group{bottom:10px!important}
+
+  /* Switch spec items to a single horizontal row — saves ~90px of height */
+  .spec-strip{flex-direction:row!important;gap:0!important;
+    padding:9px 12px!important;align-items:center!important;
+    background:rgba(255,255,255,0.72)!important}
+
+  .spec-item{flex:1!important;padding:2px 6px!important;
+    align-items:center!important;text-align:center!important}
+  .spec-item:first-child{padding-left:0!important}
+  .spec-item:last-child{padding-right:0!important}
+
+  /* Smaller text to fit three items in one row */
+  .spec-value{font-size:13px!important;margin-top:0!important;letter-spacing:-0.01em!important}
+  .spec-label{font-size:7px!important;letter-spacing:0.10em!important}
+
+  /* Vertical dividers for the horizontal layout */
+  .spec-sep{width:1px!important;height:28px!important;align-self:center!important;
+    background:linear-gradient(to bottom,transparent,rgba(0,0,0,0.14) 20%,
+    rgba(0,0,0,0.14) 80%,transparent)!important}
+
+  /* Slimmer CTA button */
+  .hero-cta-btn{padding:12px 0!important;font-size:14px!important}
 }
 </style>
 </head>
