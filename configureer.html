@@ -85,9 +85,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0A0A0A;
   z-index:15;display:flex;align-items:center;gap:20px;
   background:rgba(0,0,0,0.52);backdrop-filter:blur(12px);
   border:1px solid rgba(255,255,255,0.12);border-radius:100px;
-  padding:10px 22px;pointer-events:none;
-  opacity:0;transition:opacity 0.5s ease}
-#cfg-hint.visible{opacity:1}
+  padding:10px 22px;pointer-events:none;opacity:1}
 .cfg-hint-item{display:flex;align-items:center;gap:7px;
   font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;
   color:rgba(255,255,255,0.60);white-space:nowrap}
@@ -170,7 +168,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0A0A0A;
     </div>
   </div>
 
-  <!-- Interaction hint (fades out on first drag) -->
+  <!-- Interaction hint — always visible -->
   <div id="cfg-hint">
     <span class="cfg-hint-item">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 11V6a3 3 0 0 1 6 0v5"/><path d="M9 11H5l1 9h12l1-9h-4"/><path d="M12 11v4"/></svg>
@@ -409,19 +407,6 @@ gltfLoader.load(
       loaderEl.classList.add('fade');
       setTimeout(function(){ loaderEl.style.display = 'none'; }, 800);
       canvas.classList.add('visible');
-      // Show interaction hint, auto-dismiss after 4s
-      setTimeout(function() {
-        var hint = document.getElementById('cfg-hint');
-        if (hint) {
-          hint.classList.add('visible');
-          function dismissHint() {
-            hint.classList.remove('visible');
-            renderer.domElement.removeEventListener('pointerdown', dismissHint);
-          }
-          renderer.domElement.addEventListener('pointerdown', dismissHint, { once: true });
-          setTimeout(function() { hint.classList.remove('visible'); }, 4000);
-        }
-      }, 800);
     }, 350);
   },
   function onProgress(xhr) {
