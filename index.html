@@ -225,9 +225,9 @@ scene.add(ambLight);
 const pmrem = new THREE.PMREMGenerator(renderer);
 pmrem.compileEquirectangularShader();
 
-// HalfFloatType: required for iOS — FloatType is not reliably supported on mobile WebGL
+// HalfFloatType required for iOS — desktop keeps FloatType for full precision env map
 new THREE.RGBELoader()
-  .setDataType(THREE.HalfFloatType)
+  .setDataType(isMobile ? THREE.HalfFloatType : THREE.FloatType)
   .load('env.hdr', function(hdr) {
     var envMap = pmrem.fromEquirectangular(hdr).texture;
     scene.environment = envMap;
@@ -448,7 +448,7 @@ function fadeOpacity(mat, from, to, ms) {
 
 function startCarEntry() {
   if (!carRig) { entryPending = true; return; }
-  scrollEnabled = true; // enable immediately — car position is guarded by !entryActive in scroll block
+  if (isMobile) scrollEnabled = true; // mobile: enable immediately; desktop waits until entry ends (line 724)
   entryElapsed = 0;
   carYaw = START_ROT_Y; carYawVel = 0;
   prevSpeed = 0;
