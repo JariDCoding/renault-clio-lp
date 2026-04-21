@@ -174,7 +174,7 @@ function tryReveal() {
     landingEl.classList.add('visible');
     console.log('[intro] reveal complete');
 
-    scrollEnabled = true; // page is visible — allow scroll immediately; !entryActive guards prevent jitter
+    if (isMobile) scrollEnabled = true; // mobile only — model may not be loaded yet when entry fires
     document.querySelector('.wm-logo').style.opacity = '1';
     document.getElementById('hero-atm').classList.add('visible');
     setTimeout(function() { document.querySelector('.top-nav').classList.add('show'); }, 100);
