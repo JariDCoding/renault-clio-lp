@@ -367,44 +367,49 @@ var floorCanvas = document.createElement('canvas');
 floorCanvas.width = floorCanvas.height = 1024;
 var fCtx = floorCanvas.getContext('2d');
 
-fCtx.fillStyle = '#E8E9EE';
+// Base: very light warm white — polished showroom epoxy
+fCtx.fillStyle = '#EDEEF2';
 fCtx.fillRect(0, 0, 1024, 1024);
 
-var spotGrad = fCtx.createRadialGradient(512, 512, 0, 512, 512, 380);
-spotGrad.addColorStop(0,   'rgba(255,255,255,0.22)');
-spotGrad.addColorStop(0.5, 'rgba(255,255,255,0.06)');
-spotGrad.addColorStop(1,   'rgba(255,255,255,0)');
+// Strong centre hot-spot simulating studio key light reflection
+var spotGrad = fCtx.createRadialGradient(512, 512, 0, 512, 512, 440);
+spotGrad.addColorStop(0,    'rgba(255,255,255,0.70)');
+spotGrad.addColorStop(0.18, 'rgba(255,255,255,0.38)');
+spotGrad.addColorStop(0.55, 'rgba(255,255,255,0.08)');
+spotGrad.addColorStop(1,    'rgba(255,255,255,0)');
 fCtx.fillStyle = spotGrad;
 fCtx.fillRect(0, 0, 1024, 1024);
 
-for (var ri = 1; ri <= 8; ri++) {
-  var t   = ri / 8;
-  var rxa = 455 * t, rya = 330 * t;
-  var a   = 0.072 * (1 - t * 0.5);
+// Very subtle concentric rings (softer, fewer)
+for (var ri = 1; ri <= 5; ri++) {
+  var t   = ri / 5;
+  var rxa = 430 * t, rya = 310 * t;
+  var a   = 0.030 * (1 - t * 0.6);
   fCtx.beginPath();
   fCtx.ellipse(512, 512, rxa, rya, 0, 0, Math.PI * 2);
   fCtx.strokeStyle = 'rgba(0,0,0,' + a + ')';
-  fCtx.lineWidth   = (ri === 4 || ri === 7) ? 2.2 : 1.1;
+  fCtx.lineWidth   = 1.2;
   fCtx.stroke();
 }
 
-var vigGrad = fCtx.createRadialGradient(512, 512, 260, 512, 512, 512);
+// Edge vignette — subtle cool-blue shadow toward edges
+var vigGrad = fCtx.createRadialGradient(512, 512, 280, 512, 512, 512);
 vigGrad.addColorStop(0,    'rgba(0,0,0,0)');
-vigGrad.addColorStop(0.65, 'rgba(8,20,70,0)');
-vigGrad.addColorStop(1,    'rgba(8,20,70,0.10)');
+vigGrad.addColorStop(0.70, 'rgba(8,20,70,0)');
+vigGrad.addColorStop(1,    'rgba(8,20,70,0.14)');
 fCtx.fillStyle = vigGrad;
 fCtx.fillRect(0, 0, 1024, 1024);
 
 var floorTex = new THREE.CanvasTexture(floorCanvas);
-floorTex.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
+floorTex.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 16);
 
 var floorMesh = new THREE.Mesh(
-  new THREE.CircleGeometry(26, 96), // radius 26 covers full entry path (P0.x=24)
+  new THREE.CircleGeometry(26, 96),
   new THREE.MeshStandardMaterial({
-    map:              floorTex,
-    roughness:        0.52,
-    metalness:        0.05,
-    envMapIntensity:  0.4
+    map:             floorTex,
+    roughness:       0.06,   // polished mirror-like surface
+    metalness:       0.10,
+    envMapIntensity: 0.80
   })
 );
 floorMesh.rotation.x = -Math.PI / 2;
@@ -1000,7 +1005,7 @@ var _prevBgStr = '';
     key.intensity                    = 1.6   * (1 - darkT * 0.82);
     rimLight.intensity               = 0.7   * (1 - darkT * 0.82);
     fillLight.intensity              = 0.25  * (1 - darkT * 0.90);
-    floorMesh.material.envMapIntensity = 0.4 * Math.max(0, 1 - darkT * 0.95);
+    floorMesh.material.envMapIntensity = 0.80 * Math.max(0, 1 - darkT * 0.95);
     var envI = Math.max(0, 1.6 * (1 - darkT * 0.92));
     for (var mi = 0; mi < carMaterials.length; mi++) carMaterials[mi].envMapIntensity = envI;
     var litT = Math.max(0, (darkT - 0.35) / 0.65);
