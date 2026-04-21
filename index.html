@@ -203,7 +203,7 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setPixelRatio(isMobile ? Math.min(devicePixelRatio, 1.5) : Math.min(devicePixelRatio, 2));
 renderer.setSize(VW, VH);
 renderer.setClearColor(0x000000, 0);
-renderer.shadowMap.enabled       = !isMobile;
+renderer.shadowMap.enabled       = true;
 renderer.shadowMap.type          = THREE.PCFSoftShadowMap;
 renderer.physicallyCorrectLights = true;
 renderer.toneMapping             = THREE.ACESFilmicToneMapping;
@@ -245,7 +245,7 @@ new THREE.RGBELoader()
 const key = new THREE.DirectionalLight(0xffffff, 1.6);
 key.position.set(-6, 4.5, 3);
 key.castShadow = true;
-key.shadow.mapSize.set(2048, 2048);
+key.shadow.mapSize.set(isMobile ? 512 : 2048, isMobile ? 512 : 2048);
 key.shadow.camera.left = key.shadow.camera.bottom = -9;
 key.shadow.camera.right = key.shadow.camera.top   =  9;
 key.shadow.bias = -0.0002; key.shadow.normalBias = 0.02; key.shadow.radius = 3;
