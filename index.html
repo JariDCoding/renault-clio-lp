@@ -367,37 +367,58 @@ var floorCanvas = document.createElement('canvas');
 floorCanvas.width = floorCanvas.height = 1024;
 var fCtx = floorCanvas.getContext('2d');
 
-// Clean light-grey base — no rings, no texture artifacts
-fCtx.fillStyle = '#E8E9EE';
+// Luxury light-grey base — cool white like polished Italian marble
+fCtx.fillStyle = '#EAEBF0';
 fCtx.fillRect(0, 0, 1024, 1024);
 
-// Crisp centre hot-spot for premium showroom feel
-var spotGrad = fCtx.createRadialGradient(512, 512, 0, 512, 512, 420);
-spotGrad.addColorStop(0,    'rgba(255,255,255,0.72)');
-spotGrad.addColorStop(0.22, 'rgba(255,255,255,0.38)');
-spotGrad.addColorStop(0.60, 'rgba(255,255,255,0.08)');
+// Intense centre studio reflection — the key light bloom on a waxed floor
+var spotGrad = fCtx.createRadialGradient(512, 512, 0, 512, 512, 460);
+spotGrad.addColorStop(0,    'rgba(255,255,255,0.95)');
+spotGrad.addColorStop(0.10, 'rgba(255,255,255,0.80)');
+spotGrad.addColorStop(0.30, 'rgba(255,255,255,0.35)');
+spotGrad.addColorStop(0.62, 'rgba(255,255,255,0.06)');
 spotGrad.addColorStop(1,    'rgba(255,255,255,0)');
 fCtx.fillStyle = spotGrad;
 fCtx.fillRect(0, 0, 1024, 1024);
 
-// Edge vignette only — no rings
-var vigGrad = fCtx.createRadialGradient(512, 512, 300, 512, 512, 512);
+// Secondary elongated highlight — simulates a long overhead strip light
+var stripGrad = fCtx.createLinearGradient(256, 512, 768, 512);
+stripGrad.addColorStop(0,    'rgba(255,255,255,0)');
+stripGrad.addColorStop(0.35, 'rgba(255,255,255,0.12)');
+stripGrad.addColorStop(0.50, 'rgba(255,255,255,0.22)');
+stripGrad.addColorStop(0.65, 'rgba(255,255,255,0.12)');
+stripGrad.addColorStop(1,    'rgba(255,255,255,0)');
+fCtx.save();
+fCtx.globalCompositeOperation = 'lighter';
+var stripH = fCtx.createLinearGradient(512, 320, 512, 700);
+stripH.addColorStop(0, 'rgba(255,255,255,0)');
+stripH.addColorStop(0.5, 'rgba(255,255,255,1)');
+stripH.addColorStop(1, 'rgba(255,255,255,0)');
+fCtx.fillStyle = stripGrad;
+fCtx.fillRect(0, 340, 1024, 340);
+fCtx.restore();
+
+// Edge vignette — deepens toward corners for depth
+var vigGrad = fCtx.createRadialGradient(512, 512, 320, 512, 512, 512);
 vigGrad.addColorStop(0,    'rgba(0,0,0,0)');
-vigGrad.addColorStop(0.75, 'rgba(8,20,70,0)');
-vigGrad.addColorStop(1,    'rgba(8,20,70,0.10)');
+vigGrad.addColorStop(0.72, 'rgba(8,20,70,0)');
+vigGrad.addColorStop(1,    'rgba(8,20,70,0.15)');
 fCtx.fillStyle = vigGrad;
 fCtx.fillRect(0, 0, 1024, 1024);
 
 var floorTex = new THREE.CanvasTexture(floorCanvas);
 floorTex.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 16);
 
+// MeshPhysicalMaterial with clearcoat = polished epoxy / waxed marble look
 var floorMesh = new THREE.Mesh(
   new THREE.CircleGeometry(26, 96),
-  new THREE.MeshStandardMaterial({
-    map:             floorTex,
-    roughness:       0.14,   // glossy showroom — smooth sheen without HDR stripe artifacts
-    metalness:       0.10,
-    envMapIntensity: 0.90
+  new THREE.MeshPhysicalMaterial({
+    map:                floorTex,
+    roughness:          0.12,
+    metalness:          0.04,
+    clearcoat:          1.0,
+    clearcoatRoughness: 0.08,
+    envMapIntensity:    1.0
   })
 );
 floorMesh.rotation.x = -Math.PI / 2;
@@ -989,7 +1010,8 @@ var _prevBgStr = '';
     key.intensity                    = 1.6   * (1 - darkT * 0.82);
     rimLight.intensity               = 0.7   * (1 - darkT * 0.82);
     fillLight.intensity              = 0.25  * (1 - darkT * 0.90);
-    floorMesh.material.envMapIntensity = 0.90 * Math.max(0, 1 - darkT * 0.95);
+    floorMesh.material.envMapIntensity    = 1.0  * Math.max(0, 1 - darkT * 0.95);
+    floorMesh.material.clearcoatRoughness = 0.08;
     var envI = Math.max(0, 1.6 * (1 - darkT * 0.92));
     for (var mi = 0; mi < carMaterials.length; mi++) carMaterials[mi].envMapIntensity = envI;
     var litT = Math.max(0, (darkT - 0.35) / 0.65);
