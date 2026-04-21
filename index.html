@@ -477,14 +477,14 @@ var CAM_TGT = [
   new THREE.Vector3(-3.2,  0.0,  0.25),    // 9: final position
   new THREE.Vector3(-3.2,  0.65, 0.0)      // 10: CTA — look at car side mid-height
 ];
+var CAR_SCROLL_X   = [2.8, 1.5, 1.5, 0.8, 0.0, -0.8, -1.6, -2.4, -2.8, -3.2, -3.2];
+var CAR_SCROLL_Z   = [-0.15, -0.15, -0.15, -0.15, -0.15, -0.15, -0.15, -0.15, -0.15, -0.15, -0.15];
 if (isMobile) {
   CAM_POS[0].set(-5.2, 1.3, 2.4);    // lower camera angle on mobile
   CAM_TGT[0].set(2.0,  0.55, 0.0);   // look-at aligned with lower/left framing
   P3.x = 1.5;                          // car ends more to the left on mobile
   CAR_SCROLL_X[0] = 1.5;              // scroll start synced to new P3
 }
-var CAR_SCROLL_X   = [2.8, 1.5, 1.5, 0.8, 0.0, -0.8, -1.6, -2.4, -2.8, -3.2, -3.2];
-var CAR_SCROLL_Z   = [-0.15, -0.15, -0.15, -0.15, -0.15, -0.15, -0.15, -0.15, -0.15, -0.15, -0.15];
 var CAR_SCROLL_YAW = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Math.PI * 0.11];
 
 var _scrollWheelAccum = 0;
