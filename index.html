@@ -650,12 +650,13 @@ gltfLoader.load('clio.glb',
 
 var clock = new THREE.Clock();
 var totalTime = 0;
-var _mobileFrameMs = 0;
+var _lastFrameMs = 0;
 
 (function animate(now){
   requestAnimationFrame(animate);
-  if (isMobile && now - _mobileFrameMs < 33) return; // 30fps cap on mobile, desktop runs uncapped
-  if (isMobile) _mobileFrameMs = now;
+  var _interval = isMobile ? 33 : 7; // mobile: 30fps  desktop: 144fps ceiling
+  if (now - _lastFrameMs < _interval) return;
+  _lastFrameMs = now;
   var dt = Math.min(clock.getDelta(), 0.05);
   totalTime += dt;
 
