@@ -290,13 +290,7 @@ floor.receiveShadow = true;
 scene.add(floor);
 
 // ── Color system ──────────────────────────────────────────────────
-var PALETTE = {
-  '#1B3A6B': new THREE.Color(0x1B3A6B),
-  '#C0392B': new THREE.Color(0xC0392B),
-  '#F5C518': new THREE.Color(0xF5C518)
-};
-
-// Palette in LINEAR space — CSS hex is sRGB; convert so ACES renders them correctly
+// sRGB hex → linear so ACES renders them at the expected hue
 var PALETTE = {
   '#1B3A6B': new THREE.Color('#1B3A6B').convertSRGBToLinear(),
   '#C0392B': new THREE.Color('#C0392B').convertSRGBToLinear(),
@@ -354,6 +348,35 @@ gltfLoader.load(
     box.getCenter(ctr);
     car.position.set(-ctr.x, -box.min.y, -ctr.z);
 
+    // ── Pre-built shared materials ────────────────────────────────
+    // Tinted glass — physical transmission so you see through it
+    var glassMat = new THREE.MeshPhysicalMaterial({
+      color:              new THREE.Color('#0d0d1a').convertSRGBToLinear(),
+      transparent:        true,
+      opacity:            0.30,
+      roughness:          0.05,
+      metalness:          0.0,
+      clearcoat:          1.0,
+      clearcoatRoughness: 0.05,
+      envMapIntensity:    0.8,
+      side:               THREE.FrontSide,
+      depthWrite:         false
+    });
+
+    // Chrome badge / logo
+    var chromeMat = new THREE.MeshStandardMaterial({
+      color:           new THREE.Color('#C0C0C0').convertSRGBToLinear(),
+      metalness:       1.0,
+      roughness:       0.08,
+      envMapIntensity: 2.0
+    });
+
+    // Pattern helpers
+    var GLASS_RE  = /glass|window|windshield|windscreen|vitre|ruit|glazing/i;
+    var BADGE_RE  = /logo|badge|emblem|renault|diamond|lozenge|marque/i;
+    var LIGHT_RE  = /light|lamp|headlight|taillight|indicator|turn|fog|lens/i;
+    var CHROME_RE = /chrome|mirror|trim_metal|brightwork/i;
+
     car.traverse(function(child) {
       if (!child.isMesh) return;
       child.castShadow    = true;
@@ -361,38 +384,79 @@ gltfLoader.load(
 
       if (!child.material) return;
 
-      var matName = child.material.name || '';
+      var matName  = (child.material.name  || '').toLowerCase();
+      var meshName = (child.name           || '').toLowerCase();
+      var mat      = child.material;
 
-      if (matName === 'CarPaint.002') {
-        // Create once (copying all maps from GLB), share across all paint meshes
-        if (!paintMat) paintMat = makePaintMat(child.material);
+      // ── Log every mesh so we can see the full picture in DevTools ──
+      console.log(
+        '[cfg] mesh:"' + child.name + '"',
+        '| mat:"' + child.material.name + '"',
+        '| type:' + child.material.type,
+        '| transp:' + child.material.transparent,
+        '| opacity:' + child.material.opacity.toFixed(2),
+        '| color:#' + child.material.color.getHexString(),
+        '| metal:' + (child.material.metalness !== undefined ? child.material.metalness.toFixed(2) : 'n/a'),
+        '| rough:' + (child.material.roughness !== undefined ? child.material.roughness.toFixed(2) : 'n/a')
+      );
+
+      // ── 1. Car body paint ─────────────────────────────────────────
+      if (matName === 'carpaint.002') {
+        if (!paintMat) paintMat = makePaintMat(mat);
         child.material = paintMat;
 
-      } else if (matName === 'NumberPlate.002') {
-        // Reproduce TIMECHAMBER plate — same canvas code as index.html
+      // ── 2. Number plate ───────────────────────────────────────────
+      } else if (matName === 'numberplate.002') {
         var pcv  = document.createElement('canvas');
         pcv.width = 640; pcv.height = 160;
         var pctx = pcv.getContext('2d');
-        pctx.fillStyle = '#000';
-        pctx.fillRect(0, 0, 640, 160);
-        pctx.strokeStyle = 'rgba(255,255,255,0.20)';
-        pctx.lineWidth = 4;
+        pctx.fillStyle = '#000'; pctx.fillRect(0, 0, 640, 160);
+        pctx.strokeStyle = 'rgba(255,255,255,0.20)'; pctx.lineWidth = 4;
         pctx.strokeRect(8, 8, 624, 144);
         pctx.fillStyle = '#fff';
         pctx.font = 'bold 60px Arial,sans-serif';
-        pctx.textAlign = 'center';
-        pctx.textBaseline = 'middle';
+        pctx.textAlign = 'center'; pctx.textBaseline = 'middle';
         pctx.fillText('TIMECHAMBER', 320, 82);
         var plateTex = new THREE.CanvasTexture(pcv);
-        plateTex.flipY = false;
-        plateTex.needsUpdate = true;
+        plateTex.flipY = false; plateTex.needsUpdate = true;
         child.material = new THREE.MeshStandardMaterial({
           map: plateTex, roughness: 0.35, metalness: 0.05
         });
 
+      // ── 3. Glass / windows ────────────────────────────────────────
+      // Detect by: material name pattern OR mesh name pattern OR
+      // the material itself is already transparent in the GLB
+      } else if (
+        GLASS_RE.test(matName) || GLASS_RE.test(meshName) ||
+        (mat.transparent && mat.opacity < 0.95 && !LIGHT_RE.test(matName))
+      ) {
+        child.material  = glassMat;
+        child.renderOrder = 2; // render after opaque, prevents z-fighting
+
+      // ── 4. Renault logo / badges ──────────────────────────────────
+      } else if (BADGE_RE.test(matName) || BADGE_RE.test(meshName)) {
+        child.material = chromeMat;
+
+      // ── 5. Chrome trim ────────────────────────────────────────────
+      } else if (CHROME_RE.test(matName) || CHROME_RE.test(meshName)) {
+        child.material = chromeMat;
+
+      // ── 6. White-patch guard ──────────────────────────────────────
+      // If a mesh has a near-white opaque color and no texture map → it's
+      // an un-painted body panel. Fold it into the shared paintMat.
+      } else if (
+        !mat.map &&
+        mat.color.r > 0.85 && mat.color.g > 0.85 && mat.color.b > 0.85 &&
+        !mat.transparent &&
+        !LIGHT_RE.test(matName) && !LIGHT_RE.test(meshName)
+      ) {
+        console.warn('[cfg] White-patch override on mesh:"' + child.name + '" mat:"' + child.material.name + '"');
+        if (!paintMat) paintMat = makePaintMat(mat);
+        child.material = paintMat;
+
+      // ── 7. Everything else — boost env map, keep GLB material ─────
       } else {
-        // All other materials — same as index.html: just boost env map
-        child.material.envMapIntensity = 1.6;
+        mat.envMapIntensity = 1.6;
       }
 
       child.material.needsUpdate = true;
