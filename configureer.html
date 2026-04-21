@@ -94,6 +94,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0A0A0A;
 @media(hover:hover){.hint-touch{display:none}}
 @media(hover:none){.hint-mouse{display:none}}
 
+/* Picker hide when advancing steps */
+#cfg-picker{transition:opacity 0.45s ease,transform 0.45s cubic-bezier(0.4,0,0.2,1)}
+#cfg-picker.cfg-hidden{opacity:0;transform:translateY(32px);pointer-events:none!important}
+#cfg-hint{transition:opacity 0.35s ease}
+#cfg-hint.cfg-hidden{opacity:0;pointer-events:none!important}
+
 /* ── Configureer meer CTA ────────────────────────────────── */
 #cfg-cta-btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;
   width:100%;max-width:340px;padding:16px 0;border-radius:14px;
@@ -694,12 +700,12 @@ gltfLoader.load(
       depthWrite:         false
     });
 
-    // Chrome badge / logo
+    // Chrome badge / logo — cool silver, roughness 0.14 prevents hex specular artifact
     var chromeMat = new THREE.MeshStandardMaterial({
-      color:           new THREE.Color('#C0C0C0').convertSRGBToLinear(),
+      color:           new THREE.Color('#D8DCE0').convertSRGBToLinear(),
       metalness:       1.0,
-      roughness:       0.08,
-      envMapIntensity: 2.0
+      roughness:       0.14,
+      envMapIntensity: 1.6
     });
 
     // Pattern helpers
@@ -707,6 +713,7 @@ gltfLoader.load(
     var BADGE_RE  = /logo|badge|emblem|renault|diamond|lozenge|marque/i;
     var LIGHT_RE  = /light|lamp|headlight|taillight|indicator|turn|fog|lens/i;
     var CHROME_RE = /chrome|mirror|trim_metal|brightwork/i;
+    var WHEEL_RE  = /wheel|tyre|tire|rim|roue|jante|pneu/i;
 
     car.traverse(function(child) {
       if (!child.isMesh) return;
@@ -788,6 +795,13 @@ gltfLoader.load(
       // ── 7. Everything else — boost env map, keep GLB material ─────
       } else {
         mat.envMapIntensity = 1.6;
+        // Prevent near-zero roughness from creating hexagonal specular artifacts
+        if (mat.metalness > 0.85 && mat.roughness < 0.06) mat.roughness = 0.12;
+      }
+
+      // Collect wheel meshes for spinning animation
+      if (WHEEL_RE.test(meshName) || WHEEL_RE.test(matName)) {
+        wheelMeshes.push(child);
       }
 
       child.material.needsUpdate = true;
@@ -849,6 +863,9 @@ function animateCamTo(pos, lookAt, duration, onDone) {
 }
 
 // ── Booking flow ──────────────────────────────────────────────────
+var wheelSpinActive = false;
+var wheelMeshes     = [];
+
 function goToColorView() {
   cfgState = 'color';
   animateCamTo(
@@ -862,6 +879,10 @@ function goToColorView() {
   hlTargetIntensity = 0;
   targetExposure    = isMobile ? 0.82 : 0.70;
   targetBgVal       = 10;
+  wheelSpinActive   = false;
+  // Show picker + hint
+  document.getElementById('cfg-picker').classList.remove('cfg-hidden');
+  document.getElementById('cfg-hint').classList.remove('cfg-hidden');
   document.getElementById('cfg-step2').classList.remove('open');
   document.getElementById('cfg-step3').classList.remove('open');
 }
@@ -869,13 +890,14 @@ function goToColorView() {
 function goToEngineView() {
   cfgState = 'engine';
   controls.autoRotate = false;
-  // Snap car off-screen in Z so it can "drive in" from behind
+  // Snap car off-screen then let it drive in with wheels spinning
   if (carObject) {
     carObject.position.z = carBaseZ - 5;
     carCurOffsetZ = -5;
   }
-  carGoalOffsetZ = 0;
-  carGoalOffsetX = 0;
+  carGoalOffsetZ  = 0;
+  carGoalOffsetX  = 0;
+  wheelSpinActive = true;
   // Side profile — camera sweeps to right of car
   animateCamTo(
     new THREE.Vector3(isMobile ? 7.0 : 6.0, 1.0, 0.8),
@@ -885,6 +907,9 @@ function goToEngineView() {
   hlTargetIntensity = 0;
   targetExposure    = isMobile ? 0.82 : 0.70;
   targetBgVal       = 10;
+  // Hide picker + hint
+  document.getElementById('cfg-picker').classList.add('cfg-hidden');
+  document.getElementById('cfg-hint').classList.add('cfg-hidden');
   // Update step 2 colour summary
   var dot  = document.getElementById('s2-color-dot');
   var name = document.getElementById('s2-color-name');
@@ -909,6 +934,7 @@ function goToContactView() {
   hlTargetIntensity = isMobile ? 3.5 : 5.5;
   targetExposure    = 0.44;
   targetBgVal       = 2;
+  wheelSpinActive   = false;
   // Update step 3 summary
   var dot3  = document.getElementById('s3-color-dot');
   var sumEl = document.getElementById('s3-config-summary');
@@ -994,6 +1020,13 @@ function tick(now) {
     }
   } else {
     controls.update();
+  }
+
+  // Wheel spinning (engine/drive view)
+  if (wheelSpinActive && wheelMeshes.length > 0) {
+    for (var wi = 0; wi < wheelMeshes.length; wi++) {
+      wheelMeshes[wi].rotation.x += dt * 5.5;
+    }
   }
 
   // Car "drives in" animation

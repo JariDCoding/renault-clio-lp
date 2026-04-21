@@ -608,6 +608,10 @@ gltfLoader.load('clio.glb',
           carMaterials.push(cpMat);
         } else {
           child.material.envMapIntensity = 1.6;
+          // Prevent near-zero roughness from creating hexagonal specular artifact on badges
+          if (child.material.metalness > 0.85 && child.material.roughness < 0.06) {
+            child.material.roughness = 0.12;
+          }
           carMaterials.push(child.material);
         }
         if (child.material.name === 'NumberPlate.002') {
