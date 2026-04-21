@@ -654,9 +654,10 @@ var _lastFrameMs = 0;
 
 (function animate(now){
   requestAnimationFrame(animate);
-  var _interval = isMobile ? 33 : 7; // mobile: 30fps  desktop: 144fps ceiling
-  if (now - _lastFrameMs < _interval) return;
-  _lastFrameMs = now;
+  if (isMobile) {
+    if (now - _lastFrameMs < 33) return; // mobile: 30fps cap
+    _lastFrameMs = now;
+  }
   var dt = Math.min(clock.getDelta(), 0.05);
   totalTime += dt;
 
