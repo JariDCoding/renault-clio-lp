@@ -79,7 +79,8 @@ linear-gradient(to bottom,rgba(0,0,0,0.65) 0%,transparent 18%),linear-gradient(t
             class="gauge-arc" transform="rotate(150 70 70)" filter="url(#arc-glow)"/> <!-- Labels --> <text x="13"  y="113" text-anchor="middle" fill="rgba(0,0,0,0.28)" font-size="8.5" font-weight="600">0</text> <text x="70"  y="7"   text-anchor="middle" fill="rgba(0,0,0,0.28)" font-size="8.5" font-weight="600">100</text> <text x="127" y="113" text-anchor="middle" fill="rgba(0,0,0,0.28)" font-size="8.5" font-weight="600">200</text> <!-- Center readout --> <text x="70" y="67" text-anchor="middle" fill="#0a0a0a" font-size="30" font-weight="800" letter-spacing="-1.5">178</text> <text x="70" y="79" text-anchor="middle" fill="rgba(0,0,0,0.38)" font-size="7.5" font-weight="700" letter-spacing="2">KM/U</text> </svg> </div> </div> </div> <!-- Bottom-left spec strip + CTA --> <div class="spec-strip-group"> <div class="spec-strip"> <div class="spec-item"> <span class="spec-label">E-Tech Hybrid</span> <span class="spec-value">145 HP</span> </div> <div class="spec-sep"></div> <div class="spec-item"> <span class="spec-label">Actieradius</span> <span class="spec-value">Tot 900 km</span> </div> <div class="spec-sep"></div> <div class="spec-item"> <span class="spec-label">Vanaf</span> <span class="spec-value">€23.990</span> </div> </div> <a href="#" class="hero-cta-btn">Boek een testrit</a> </div>
 </div> <!-- FINAL CTA SECTION — fades in after gallery, car turns to face viewer -->
 <div id="final-cta" aria-hidden="true"> <div class="fcta-inner"> <span class="fcta-tag">RENAULT CLIO E-TECH</span> <h2 class="fcta-heading">Maak de Clio<br>de jouwe</h2> <p class="fcta-sub">Volledig elektrisch rijden in de stad. Ontworpen om op te vallen.</p> <div class="fcta-btns"> <a href="#" class="fcta-btn-primary">Boek een testrit</a> <a href="#" class="fcta-btn-secondary">Configureer je Clio</a> </div> </div>
-</div> <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/build/three.min.js"></script>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.140.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/loaders/DRACOLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/loaders/RGBELoader.js"></script>
@@ -173,11 +174,12 @@ function tryReveal() {
     landingEl.classList.add('visible');
     console.log('[intro] reveal complete');
 
+    scrollEnabled = true; // page is visible — allow scroll immediately; !entryActive guards prevent jitter
     document.querySelector('.wm-logo').style.opacity = '1';
     document.getElementById('hero-atm').classList.add('visible');
     setTimeout(function() { document.querySelector('.top-nav').classList.add('show'); }, 100);
     setTimeout(function() { startCarEntry(); }, 700);
-    setTimeout(function() { document.querySelector('.hero').classList.add('show'); }, 1300);
+setTimeout(function() { document.querySelector('.hero').classList.add('show'); }, 1300);
     setTimeout(function() { document.querySelector('.cards-panel').classList.add('show'); }, 1650);
     setTimeout(function() { document.querySelector('.spec-strip-group').classList.add('show'); }, 1950);
   }, 1500);
@@ -195,16 +197,17 @@ camera.lookAt(isMobile ? 2.7 : 0, 0.75, 0);
 
 const renderer = new THREE.WebGLRenderer({
   canvas, antialias: true, alpha: true,
-  powerPreference: 'high-performance', precision: 'highp'
+  powerPreference: isMobile ? 'default' : 'high-performance',
+  precision: isMobile ? 'mediump' : 'highp'
 });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setPixelRatio(isMobile ? Math.min(devicePixelRatio, 1.5) : Math.min(devicePixelRatio, 2));
 renderer.setSize(VW, VH);
-renderer.setClearColor(0x000000, 0); // transparent — CSS body #EDEDED shows through
-renderer.shadowMap.enabled       = true;
+renderer.setClearColor(0x000000, 0);
+renderer.shadowMap.enabled       = !isMobile;
 renderer.shadowMap.type          = THREE.PCFSoftShadowMap;
 renderer.physicallyCorrectLights = true;
 renderer.toneMapping             = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure     = 0.70; // lower to let dark navy show depth
+renderer.toneMappingExposure     = 0.70;
 renderer.outputEncoding          = THREE.sRGBEncoding;
 
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -222,13 +225,22 @@ scene.add(ambLight);
 const pmrem = new THREE.PMREMGenerator(renderer);
 pmrem.compileEquirectangularShader();
 
+// HalfFloatType: required for iOS — FloatType is not reliably supported on mobile WebGL
 new THREE.RGBELoader()
-  .setDataType(THREE.FloatType)
+  .setDataType(THREE.HalfFloatType)
   .load('env.hdr', function(hdr) {
     var envMap = pmrem.fromEquirectangular(hdr).texture;
     scene.environment = envMap;
     hdr.dispose(); pmrem.dispose();
-  }, undefined, function(e) { console.error('[hdri] env.hdr load failed — scene will render without environment lighting:', e); pmrem.dispose(); });
+  }, undefined, function(e) {
+    console.error('[hdri] env.hdr failed — boosting direct lights as fallback:', e);
+    pmrem.dispose();
+    // With no IBL, direct lights carry all illumination
+    ambLight.intensity  = 1.2;
+    key.intensity       = 8.0;
+    rimLight.intensity  = 3.5;
+    fillLight.intensity = 1.5;
+  });
 
 const key = new THREE.DirectionalLight(0xffffff, 1.6);
 key.position.set(-6, 4.5, 3);
@@ -405,12 +417,25 @@ var CAR_SCROLL_Z   = [-0.15, -0.15, -0.15, -0.15, -0.15, -0.15, -0.15, -0.15, -0
 var CAR_SCROLL_YAW = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Math.PI * 0.11];
 
 var _scrollWheelAccum = 0;
+var paintMat          = null;
 
 window.addEventListener('wheel', function(e) {
   if (!scrollEnabled) return;
   e.preventDefault();
   _scrollWheelAccum += e.deltaY;
 }, { passive: false });
+
+// Touch scroll
+var _touchStartY = 0;
+window.addEventListener('touchstart', function(e) {
+  _touchStartY = e.touches[0].clientY;
+}, { passive: true });
+window.addEventListener('touchmove', function(e) {
+  if (!scrollEnabled) return;
+  var dy = _touchStartY - e.touches[0].clientY;
+  _touchStartY = e.touches[0].clientY;
+  _scrollWheelAccum += dy * 2.5;
+}, { passive: true });
 
 function fadeOpacity(mat, from, to, ms) {
   var t0 = performance.now();
@@ -423,6 +448,7 @@ function fadeOpacity(mat, from, to, ms) {
 
 function startCarEntry() {
   if (!carRig) { entryPending = true; return; }
+  scrollEnabled = true; // enable immediately — car position is guarded by !entryActive in scroll block
   entryElapsed = 0;
   carYaw = START_ROT_Y; carYawVel = 0;
   prevSpeed = 0;
@@ -470,18 +496,25 @@ gltfLoader.load('clio.glb',
       child.receiveShadow = true;
       if (child.material) {
         if (child.material.name === 'CarPaint.002') {
-          // Replace with fresh material — r140 now reads KHR_clearcoat/specular/ior from GLB
-          // which washes out any color we try to set in-place. Full replacement wins.
-          var cpMat = new THREE.MeshPhysicalMaterial({
-            color: 0x060c2a,
-            roughness: 0.10,
-            metalness: 0.0,
-            clearcoat: 0.9,
-            clearcoatRoughness: 0.04,
-            reflectivity: 0.5,
-            envMapIntensity: 1.6
-          });
+          // Mobile: MeshStandard (no clearcoat render pass) — desktop: full MeshPhysical
+          var cpMat = isMobile
+            ? new THREE.MeshStandardMaterial({
+                color: 0x060c2a,
+                roughness: 0.16,
+                metalness: 0.18,
+                envMapIntensity: 1.8
+              })
+            : new THREE.MeshPhysicalMaterial({
+                color: 0x060c2a,
+                roughness: 0.10,
+                metalness: 0.0,
+                clearcoat: 0.9,
+                clearcoatRoughness: 0.04,
+                reflectivity: 0.5,
+                envMapIntensity: 1.6
+              });
           cpMat.name = 'CarPaint.002';
+          paintMat = cpMat;
           child.material = cpMat;
           carMaterials.push(cpMat);
         } else {
@@ -587,7 +620,14 @@ gltfLoader.load('clio.glb',
       var pct = Math.min(rawPct, 95);
       loadFill.style.width = pct + '%';
       if (rawPct >= 100) {
-        loadPct.textContent = 'VERWERKEN...';
+        loadPct.textContent = 'Uw digitale ervaring wordt geladen\u2026';
+        loadPct.style.fontSize = '12px';
+        loadPct.style.letterSpacing = '0.04em';
+        loadPct.style.fontWeight = '400';
+        loadPct.style.textTransform = 'none';
+        loadPct.style.textAlign = 'center';
+        loadPct.style.color = 'rgba(255,255,255,0.65)';
+        loadWrap.style.width = Math.min(VW * 0.50, 420) + 'px';
         // Slowly crawl bar 95→99% during Draco decompression so it doesn't look frozen
         var crawlStart = Date.now();
         var crawlInterval = setInterval(function() {
@@ -613,14 +653,14 @@ var totalTime = 0;
 
 (function animate(){
   requestAnimationFrame(animate);
-  var dt = Math.min(clock.getDelta(), 0.05); // clamp — prevents spiral when tab hidden
+  var dt = Math.min(clock.getDelta(), 0.05);
   totalTime += dt;
 
   if (_scrollWheelAccum !== 0) {
     var sign = _scrollWheelAccum > 0 ? 1 : -1;
     var drain = Math.min(Math.abs(_scrollWheelAccum), 120);
     _scrollWheelAccum -= sign * drain;
-    scrollLerpTarget = Math.max(0, Math.min(10, scrollLerpTarget + sign * (drain / 120) * (isMobile ? 0.225 : 0.18)));
+    scrollLerpTarget = Math.max(0, Math.min(10, scrollLerpTarget + sign * (drain / 120) * (isMobile ? 0.28 : 0.18)));
   }
 
   if (floorRevealActive) {
@@ -633,7 +673,7 @@ var totalTime = 0;
   if (entryActive && carRig) {
     entryElapsed += dt;
     entryT = Math.min(entryElapsed / ENTRY_DURATION, 1);
-    if (!scrollEnabled && entryElapsed >= 2.0) scrollEnabled = true;
+
 
     var ease = 1 - Math.pow(1 - entryT, 4);
     var u = 1 - ease;
@@ -734,27 +774,31 @@ var totalTime = 0;
     var sf  = Math.max(0, Math.min(scrollLerp - si, 1));
     var sfe = 1 - Math.pow(1 - sf, 3);
 
-    var carK = Math.min(1, dt * 8.0);
-    var carXTarget = CAR_SCROLL_X[si] + (CAR_SCROLL_X[si+1] - CAR_SCROLL_X[si]) * sfe;
-    var prevCarX   = carRig.position.x;
-    carRig.position.x += (carXTarget - carRig.position.x) * carK;
-    shadowPlane.position.x = carRig.position.x;
+    // Only update car scroll position after entry animation is done — prevents jitter
+    if (!entryActive) {
+      var carK = Math.min(1, dt * 8.0);
+      var carXTarget = CAR_SCROLL_X[si] + (CAR_SCROLL_X[si+1] - CAR_SCROLL_X[si]) * sfe;
+      var prevCarX   = carRig.position.x;
+      carRig.position.x += (carXTarget - carRig.position.x) * carK;
+      shadowPlane.position.x = carRig.position.x;
 
-    var carZTarget = CAR_SCROLL_Z[si] + (CAR_SCROLL_Z[si+1] - CAR_SCROLL_Z[si]) * sfe;
-    var prevCarZ   = carRig.position.z;
-    carRig.position.z += (carZTarget - carRig.position.z) * carK;
-    shadowPlane.position.z = carRig.position.z;
+      var carZTarget = CAR_SCROLL_Z[si] + (CAR_SCROLL_Z[si+1] - CAR_SCROLL_Z[si]) * sfe;
+      var prevCarZ   = carRig.position.z;
+      carRig.position.z += (carZTarget - carRig.position.z) * carK;
+      shadowPlane.position.z = carRig.position.z;
 
-    var scrollYawTgt = CAR_SCROLL_YAW[si] + (CAR_SCROLL_YAW[si+1] - CAR_SCROLL_YAW[si]) * sfe;
-    carRig.rotation.y += (scrollYawTgt - carRig.rotation.y) * Math.min(1, dt * 2.5);
+      var scrollYawTgt = CAR_SCROLL_YAW[si] + (CAR_SCROLL_YAW[si+1] - CAR_SCROLL_YAW[si]) * sfe;
+      carRig.rotation.y += (scrollYawTgt - carRig.rotation.y) * Math.min(1, dt * 2.5);
 
-    var scrollDist = Math.sqrt(
-      Math.pow(carRig.position.x - prevCarX, 2) +
-      Math.pow(carRig.position.z - prevCarZ, 2)
-    );
-    wheelSpinAngle += scrollDist / 0.33;
+      var scrollDist = Math.sqrt(
+        Math.pow(carRig.position.x - prevCarX, 2) +
+        Math.pow(carRig.position.z - prevCarZ, 2)
+      );
+      wheelSpinAngle += scrollDist / 0.33;
+    }
 
-    if (scrollLerp > 0.005) {
+    // Gate camera scroll movement — must not run during entry or camera fights the animation
+    if (scrollLerp > 0.005 && !entryActive) {
       controls.enabled = false;
       var cpx = CAM_POS[si].x + (CAM_POS[si+1].x - CAM_POS[si].x) * sfe;
       var cpy = CAM_POS[si].y + (CAM_POS[si+1].y - CAM_POS[si].y) * sfe;
@@ -776,7 +820,7 @@ var totalTime = 0;
       camera.up.normalize();
       camera.lookAt(controls.target);
     } else {
-      controls.enabled = true;
+      controls.enabled = !isMobile && !entryActive;
       controls.update();
     }
   } else {
@@ -867,6 +911,7 @@ var totalTime = 0;
 })();
 
 function initHoloViewer() {
+  if (isMobile) return; // skip on mobile — extra WebGL context causes heat
   var cv = document.getElementById('holo-cv');
   if (!cv || !carModel) return;
   var W = Math.max(cv.offsetWidth || 0, 200);
@@ -1055,11 +1100,13 @@ window.addEventListener('resize', function() {
   if (window._resizeGallery) window._resizeGallery(nW, nH);
 });
 
+
 /* ─────────────────────────────────────────────────────
    INFINITE GALLERY — exact port of vaib215/3d-gallery-photography
    Visible only on the last (light-mode) section: scrollLerp ≥ 7.5
    ───────────────────────────────────────────────────── */
 (function initGallery() {
+  if (isMobile) return; // skip on mobile — second WebGL renderer causes heat + scroll conflict
 
   /* ── IMAGES — fill these paths ── */
   var GALLERY_IMAGES = [
