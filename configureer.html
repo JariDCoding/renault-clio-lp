@@ -298,30 +298,41 @@ var PALETTE = {
   '#F5C518': new THREE.Color(0xF5C518)
 };
 
-// One shared material assigned to ALL CarPaint.002 meshes so a single .color.set() recolours everything
-var paintMat    = null;
-var fromColor   = new THREE.Color(0x1B3A6B);
-var toColor     = new THREE.Color(0x1B3A6B);
-var curColor    = new THREE.Color(0x1B3A6B);
-var lerpT       = 1;
-var activeHex   = '#1B3A6B';
-var LERP_DUR    = 0.6;
+// Palette in LINEAR space — CSS hex is sRGB; convert so ACES renders them correctly
+var PALETTE = {
+  '#1B3A6B': new THREE.Color('#1B3A6B').convertSRGBToLinear(),
+  '#C0392B': new THREE.Color('#C0392B').convertSRGBToLinear(),
+  '#F5C518': new THREE.Color('#F5C518').convertSRGBToLinear()
+};
 
-function applyColor(c) {
-  if (paintMat) paintMat.color.set(c);
-}
+// One shared material for all CarPaint.002 meshes
+var paintMat  = null;
+var fromColor = new THREE.Color().copy(PALETTE['#1B3A6B']);
+var toColor   = new THREE.Color().copy(PALETTE['#1B3A6B']);
+var curColor  = new THREE.Color().copy(PALETTE['#1B3A6B']);
+var lerpT     = 1;
+var activeHex = '#1B3A6B';
+var LERP_DUR  = 0.6;
 
-function makePaintMat() {
-  return isMobile
-    ? new THREE.MeshStandardMaterial({
-        color: new THREE.Color(0x1B3A6B), roughness: 0.10,
-        metalness: 0.12, envMapIntensity: 2.2
-      })
-    : new THREE.MeshPhysicalMaterial({
-        color: new THREE.Color(0x1B3A6B), roughness: 0.10, metalness: 0.0,
-        clearcoat: 0.9, clearcoatRoughness: 0.04,
-        reflectivity: 0.5, envMapIntensity: 1.6
-      });
+function applyColor(c) { if (paintMat) paintMat.color.copy(c); }
+
+// Clone the original GLB material — preserves all texture/normal/roughness maps —
+// then upgrade to MeshPhysical and add clearcoat on top
+function makePaintMat(src) {
+  var m = isMobile
+    ? new THREE.MeshStandardMaterial()
+    : new THREE.MeshPhysicalMaterial();
+  m.copy(src);                              // keep all maps from the GLB
+  m.color.copy(curColor);                  // apply initial colour in linear space
+  m.metalness        = 0.0;               // paint is not metallic
+  m.envMapIntensity  = 1.6;
+  if (!isMobile) {
+    m.clearcoat            = 0.85;
+    m.clearcoatRoughness   = 0.04;
+    m.reflectivity         = 0.5;
+  }
+  m.name = 'CarPaint.002';
+  return m;
 }
 
 // ── GLB loading ───────────────────────────────────────────────────
@@ -357,8 +368,8 @@ gltfLoader.load(
       var matName = child.material.name || '';
 
       if (matName === 'CarPaint.002') {
-        // Shared material — create once, assign to every paint mesh
-        if (!paintMat) { paintMat = makePaintMat(); paintMat.name = 'CarPaint.002'; }
+        // Create once (copying maps from first match), share across all paint meshes
+        if (!paintMat) paintMat = makePaintMat(child.material);
         child.material = paintMat;
 
       } else if (matName === 'NumberPlate.002') {
@@ -442,7 +453,7 @@ swatches.forEach(function(sw) {
     swatches.forEach(function(s){ s.classList.remove('active'); });
     sw.classList.add('active');
     fromColor.copy(curColor);
-    toColor.copy(PALETTE[hex]);
+    toColor.copy(PALETTE[hex]);   // already linear-converted
     lerpT = 0;
   });
 });
