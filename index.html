@@ -197,17 +197,17 @@ camera.lookAt(isMobile ? 2.7 : 0, isMobile ? 0.45 : 0.75, 0);
 
 const renderer = new THREE.WebGLRenderer({
   canvas, antialias: true, alpha: true,
-  powerPreference: isMobile ? 'default' : 'high-performance',
-  precision: isMobile ? 'mediump' : 'highp'
+  powerPreference: 'high-performance',
+  precision: 'highp'
 });
-renderer.setPixelRatio(isMobile ? Math.min(devicePixelRatio, 1.5) : Math.min(devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(VW, VH);
 renderer.setClearColor(0x000000, 0);
 renderer.shadowMap.enabled       = true;
 renderer.shadowMap.type          = THREE.PCFSoftShadowMap;
 renderer.physicallyCorrectLights = true;
 renderer.toneMapping             = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure     = 0.70;
+renderer.toneMappingExposure     = isMobile ? 0.82 : 0.70;
 renderer.outputEncoding          = THREE.sRGBEncoding;
 
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -245,7 +245,7 @@ new THREE.RGBELoader()
 const key = new THREE.DirectionalLight(0xffffff, 1.6);
 key.position.set(-6, 4.5, 3);
 key.castShadow = true;
-key.shadow.mapSize.set(isMobile ? 512 : 2048, isMobile ? 512 : 2048);
+key.shadow.mapSize.set(isMobile ? 1024 : 2048, isMobile ? 1024 : 2048);
 key.shadow.camera.left = key.shadow.camera.bottom = -9;
 key.shadow.camera.right = key.shadow.camera.top   =  9;
 key.shadow.bias = -0.0002; key.shadow.normalBias = 0.02; key.shadow.radius = 3;
@@ -500,9 +500,9 @@ gltfLoader.load('clio.glb',
           var cpMat = isMobile
             ? new THREE.MeshStandardMaterial({
                 color: 0x060c2a,
-                roughness: 0.16,
-                metalness: 0.18,
-                envMapIntensity: 1.8
+                roughness: 0.10,
+                metalness: 0.12,
+                envMapIntensity: 2.2
               })
             : new THREE.MeshPhysicalMaterial({
                 color: 0x060c2a,
@@ -862,7 +862,7 @@ var totalTime = 0;
     var bg = Math.round(237 * (1 - darkT * 0.82));        // #EDEDED → ~rgb(43,43,43)
     document.body.style.background  = 'rgb(' + bg + ',' + bg + ',' + bg + ')';
     if (darkT >= 0.99) document.body.style.background = '#07080c';
-    renderer.toneMappingExposure     = 0.70 - darkT * 0.30;
+    renderer.toneMappingExposure     = (isMobile ? 0.82 : 0.70) - darkT * 0.30;
     ambLight.intensity               = 0.18  * (1 - darkT * 0.88);
     key.intensity                    = 1.6   * (1 - darkT * 0.82);
     rimLight.intensity               = 0.7   * (1 - darkT * 0.82);
