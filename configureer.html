@@ -80,6 +80,20 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0A0A0A;
   color:rgba(255,255,255,0.38);transition:color 0.25s;white-space:nowrap;text-align:center}
 .swatch.active .swatch-name{color:rgba(255,255,255,0.80)}
 
+/* Interaction hint */
+#cfg-hint{position:fixed;bottom:160px;left:50%;transform:translateX(-50%);
+  z-index:15;display:flex;align-items:center;gap:20px;
+  background:rgba(0,0,0,0.52);backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,0.12);border-radius:100px;
+  padding:10px 22px;pointer-events:none;
+  opacity:0;transition:opacity 0.5s ease}
+#cfg-hint.visible{opacity:1}
+.cfg-hint-item{display:flex;align-items:center;gap:7px;
+  font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;
+  color:rgba(255,255,255,0.60);white-space:nowrap}
+.cfg-hint-item svg{width:16px;height:16px;opacity:0.70;flex-shrink:0}
+.cfg-hint-sep{width:1px;height:16px;background:rgba(255,255,255,0.18)}
+
 /* Responsive */
 @media(max-width:768px){
   #cfg-topbar{padding:18px 20px}
@@ -154,6 +168,19 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0A0A0A;
         <span class="swatch-name">Soleil Yellow</span>
       </div>
     </div>
+  </div>
+
+  <!-- Interaction hint (fades out on first drag) -->
+  <div id="cfg-hint">
+    <span class="cfg-hint-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 11V6a3 3 0 0 1 6 0v5"/><path d="M9 11H5l1 9h12l1-9h-4"/><path d="M12 11v4"/></svg>
+      Slepen om te draaien
+    </span>
+    <div class="cfg-hint-sep"></div>
+    <span class="cfg-hint-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      Scrollen om te zoomen
+    </span>
   </div>
 
 </div><!-- /cfg-ui -->
@@ -271,7 +298,8 @@ var PALETTE = {
   '#F5C518': new THREE.Color(0xF5C518)
 };
 
-var paintMat    = null;   // replaced MeshPhysical on CarPaint.002
+// One shared material assigned to ALL CarPaint.002 meshes so a single .color.set() recolours everything
+var paintMat    = null;
 var fromColor   = new THREE.Color(0x1B3A6B);
 var toColor     = new THREE.Color(0x1B3A6B);
 var curColor    = new THREE.Color(0x1B3A6B);
@@ -281,6 +309,19 @@ var LERP_DUR    = 0.6;
 
 function applyColor(c) {
   if (paintMat) paintMat.color.set(c);
+}
+
+function makePaintMat() {
+  return isMobile
+    ? new THREE.MeshStandardMaterial({
+        color: new THREE.Color(0x1B3A6B), roughness: 0.10,
+        metalness: 0.12, envMapIntensity: 2.2
+      })
+    : new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(0x1B3A6B), roughness: 0.10, metalness: 0.0,
+        clearcoat: 0.9, clearcoatRoughness: 0.04,
+        reflectivity: 0.5, envMapIntensity: 1.6
+      });
 }
 
 // ── GLB loading ───────────────────────────────────────────────────
@@ -304,6 +345,8 @@ gltfLoader.load(
     box.getCenter(ctr);
     car.position.set(-ctr.x, -box.min.y, -ctr.z);
 
+    var GLASS_RE = /glass|window|windshield|windscreen|vitre|ruit/i;
+
     car.traverse(function(child) {
       if (!child.isMesh) return;
       child.castShadow    = true;
@@ -311,30 +354,45 @@ gltfLoader.load(
 
       if (!child.material) return;
 
-      if (child.material.name === 'CarPaint.002') {
-        // Upgrade to MeshPhysicalMaterial with clearcoat — same as index.html
-        var newMat = isMobile
-          ? new THREE.MeshStandardMaterial({
-              color:           new THREE.Color(0x1B3A6B),
-              roughness:       0.10,
-              metalness:       0.12,
-              envMapIntensity: 2.2
-            })
-          : new THREE.MeshPhysicalMaterial({
-              color:              new THREE.Color(0x1B3A6B),
-              roughness:          0.10,
-              metalness:          0.0,
-              clearcoat:          0.9,
-              clearcoatRoughness: 0.04,
-              reflectivity:       0.5,
-              envMapIntensity:    1.6
-            });
-        newMat.name  = 'CarPaint.002';
-        paintMat     = newMat;
-        child.material = newMat;
+      var matName = child.material.name || '';
+
+      if (matName === 'CarPaint.002') {
+        // Shared material — create once, assign to every paint mesh
+        if (!paintMat) { paintMat = makePaintMat(); paintMat.name = 'CarPaint.002'; }
+        child.material = paintMat;
+
+      } else if (matName === 'NumberPlate.002') {
+        // Reproduce TIMECHAMBER plate — same canvas code as index.html
+        var pcv  = document.createElement('canvas');
+        pcv.width = 640; pcv.height = 160;
+        var pctx = pcv.getContext('2d');
+        pctx.fillStyle = '#000';
+        pctx.fillRect(0, 0, 640, 160);
+        pctx.strokeStyle = 'rgba(255,255,255,0.20)';
+        pctx.lineWidth = 4;
+        pctx.strokeRect(8, 8, 624, 144);
+        pctx.fillStyle = '#fff';
+        pctx.font = 'bold 60px Arial,sans-serif';
+        pctx.textAlign = 'center';
+        pctx.textBaseline = 'middle';
+        pctx.fillText('TIMECHAMBER', 320, 82);
+        var plateTex = new THREE.CanvasTexture(pcv);
+        plateTex.flipY = false;
+        plateTex.needsUpdate = true;
+        child.material = new THREE.MeshStandardMaterial({
+          map: plateTex, roughness: 0.35, metalness: 0.05
+        });
+
+      } else if (GLASS_RE.test(matName) || GLASS_RE.test(child.name)) {
+        // Glass: keep original material but tame reflections so it reads as tinted glass
+        child.material.envMapIntensity = 0.35;
+        child.material.roughness       = Math.max(child.material.roughness, 0.08);
+
       } else {
         child.material.envMapIntensity = 1.6;
       }
+
+      child.material.needsUpdate = true;
     });
 
     scene.add(car);
@@ -346,6 +404,19 @@ gltfLoader.load(
       loaderEl.classList.add('fade');
       setTimeout(function(){ loaderEl.style.display = 'none'; }, 800);
       canvas.classList.add('visible');
+      // Show interaction hint, auto-dismiss after 4s
+      setTimeout(function() {
+        var hint = document.getElementById('cfg-hint');
+        if (hint) {
+          hint.classList.add('visible');
+          function dismissHint() {
+            hint.classList.remove('visible');
+            renderer.domElement.removeEventListener('pointerdown', dismissHint);
+          }
+          renderer.domElement.addEventListener('pointerdown', dismissHint, { once: true });
+          setTimeout(function() { hint.classList.remove('visible'); }, 4000);
+        }
+      }, 800);
     }, 350);
   },
   function onProgress(xhr) {
