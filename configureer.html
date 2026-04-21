@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="description" content="Configureer jouw Renault Clio — kies je kleur en bekijk de wagen in 3D.">
+<title>Configureer jouw Clio — Renault</title>
+<link rel="preload" href="fonts/NouvelRBold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/NouvelRExtrabold.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:'NouvelR';font-weight:300;src:url('fonts/NouvelRLight.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'NouvelR';font-weight:400;src:url('fonts/NouvelRRegular.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'NouvelR';font-weight:600;src:url('fonts/NouvelRSemibold.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'NouvelR';font-weight:700;src:url('fonts/NouvelRBold.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'NouvelR';font-weight:800;src:url('fonts/NouvelRExtrabold.woff2') format('woff2');font-display:swap}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#0A0A0A;
+  font-family:'NouvelR',sans-serif;-webkit-font-smoothing:antialiased}
+
+/* 3D canvas */
+#cfg-cv{position:fixed;inset:0;width:100vw;height:100vh;display:block;z-index:1;
+  opacity:0;transition:opacity 1.1s ease,transform 1.3s cubic-bezier(0.16,1,0.3,1);
+  transform:translateY(28px)}
+#cfg-cv.visible{opacity:1;transform:translateY(0)}
+
+/* Loading overlay */
+#cfg-loader{position:fixed;inset:0;z-index:200;background:#0A0A0A;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
+  transition:opacity 0.7s ease}
+#cfg-loader.fade{opacity:0;pointer-events:none}
+#cfg-loader-logo{height:52px;filter:brightness(0) invert(1);opacity:0.75;margin-bottom:32px}
+#cfg-loader-label{font-size:10px;font-weight:700;letter-spacing:0.26em;text-transform:uppercase;
+  color:rgba(255,255,255,0.38);margin-bottom:14px}
+#cfg-loader-track{width:160px;height:1.5px;background:rgba(255,255,255,0.10);border-radius:2px;overflow:hidden}
+#cfg-loader-bar{height:100%;width:0%;background:rgba(255,255,255,0.65);border-radius:2px;
+  transition:width 0.25s ease}
+
+/* UI layer (on top of canvas) */
+#cfg-ui{position:fixed;inset:0;z-index:10;pointer-events:none}
+
+/* Top bar */
+#cfg-topbar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;
+  justify-content:space-between;padding:24px 32px;pointer-events:auto}
+#cfg-nav-logo{height:44px;filter:brightness(0) invert(1);opacity:0.88;flex-shrink:0}
+#cfg-back{display:inline-flex;align-items:center;gap:7px;color:rgba(255,255,255,0.60);
+  text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.14em;
+  text-transform:uppercase;transition:color 0.2s;pointer-events:auto}
+#cfg-back:hover{color:#fff}
+#cfg-back svg{width:16px;height:16px;flex-shrink:0}
+
+/* Center title */
+#cfg-title-wrap{position:absolute;top:0;left:0;right:0;display:flex;flex-direction:column;
+  align-items:center;padding-top:30px;pointer-events:none}
+#cfg-eyebrow{font-size:9px;font-weight:700;letter-spacing:0.26em;text-transform:uppercase;
+  color:rgba(255,255,255,0.32);margin-bottom:7px}
+#cfg-title{font-size:clamp(20px,2.6vw,36px);font-weight:800;letter-spacing:-0.022em;color:#fff}
+
+/* Color picker dock */
+#cfg-picker{position:absolute;bottom:0;left:0;right:0;
+  padding:32px 24px 44px;
+  display:flex;flex-direction:column;align-items:center;gap:20px;
+  background:linear-gradient(to top,
+    rgba(0,0,0,0.90) 0%,
+    rgba(0,0,0,0.55) 55%,
+    transparent 100%);
+  pointer-events:auto}
+#cfg-picker-label{font-size:9px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;
+  color:rgba(255,255,255,0.38)}
+#cfg-swatches{display:flex;align-items:center;gap:32px}
+
+.swatch{display:flex;flex-direction:column;align-items:center;gap:9px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;user-select:none}
+.swatch-ring{width:52px;height:52px;border-radius:50%;padding:3px;
+  border:2px solid transparent;transition:border-color 0.3s ease,transform 0.2s ease}
+.swatch.active .swatch-ring{border-color:rgba(255,255,255,0.85)}
+.swatch:hover .swatch-ring{transform:scale(1.07)}
+.swatch-dot{width:100%;height:100%;border-radius:50%;box-shadow:0 2px 12px rgba(0,0,0,0.55)}
+.swatch-name{font-size:8px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;
+  color:rgba(255,255,255,0.38);transition:color 0.25s;white-space:nowrap;text-align:center}
+.swatch.active .swatch-name{color:rgba(255,255,255,0.80)}
+
+/* Responsive */
+@media(max-width:768px){
+  #cfg-topbar{padding:18px 20px}
+  #cfg-nav-logo{height:36px}
+  #cfg-title{font-size:clamp(17px,5vw,26px)}
+  #cfg-title-wrap{padding-top:22px}
+  #cfg-picker{padding:24px 16px 36px;gap:16px}
+  #cfg-swatches{gap:24px}
+  .swatch-ring{width:46px;height:46px}
+}
+@media(max-width:430px){
+  #cfg-title-wrap{padding-top:18px}
+  #cfg-picker{padding:18px 12px 30px}
+  #cfg-swatches{gap:20px}
+  .swatch-ring{width:44px;height:44px}
+}
+</style>
+</head>
+<body>
+
+<!-- Loading screen -->
+<div id="cfg-loader">
+  <img id="cfg-loader-logo" src="renault-logo.svg" alt="Renault">
+  <div id="cfg-loader-label">Laden</div>
+  <div id="cfg-loader-track"><div id="cfg-loader-bar"></div></div>
+</div>
+
+<!-- 3D canvas -->
+<canvas id="cfg-cv"></canvas>
+
+<!-- UI overlay -->
+<div id="cfg-ui">
+
+  <!-- Top bar -->
+  <div id="cfg-topbar">
+    <img id="cfg-nav-logo" src="renault-logo.svg" alt="Renault">
+    <a id="cfg-back" href="/">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+      Terug
+    </a>
+  </div>
+
+  <!-- Page title -->
+  <div id="cfg-title-wrap">
+    <span id="cfg-eyebrow">Renault Clio E-Tech</span>
+    <h1 id="cfg-title">Configureer jouw Clio</h1>
+  </div>
+
+  <!-- Color picker -->
+  <div id="cfg-picker">
+    <div id="cfg-picker-label">Kies jouw kleur</div>
+    <div id="cfg-swatches">
+      <div class="swatch active" data-hex="#1B3A6B" data-label="Intense Blue">
+        <div class="swatch-ring">
+          <div class="swatch-dot" style="background:#1B3A6B"></div>
+        </div>
+        <span class="swatch-name">Intense Blue</span>
+      </div>
+      <div class="swatch" data-hex="#C0392B" data-label="Flamme Rouge">
+        <div class="swatch-ring">
+          <div class="swatch-dot" style="background:#C0392B"></div>
+        </div>
+        <span class="swatch-name">Flamme Rouge</span>
+      </div>
+      <div class="swatch" data-hex="#F5C518" data-label="Soleil Yellow">
+        <div class="swatch-ring">
+          <div class="swatch-dot" style="background:#F5C518"></div>
+        </div>
+        <span class="swatch-name">Soleil Yellow</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /cfg-ui -->
+
+<!-- Three.js r140 (same version as main page for Draco compat) -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.140.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/loaders/DRACOLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+'use strict';
+
+// ── Renderer ─────────────────────────────────────────────────────
+const canvas = document.getElementById('cfg-cv');
+const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.25;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+// ── Scene ─────────────────────────────────────────────────────────
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0A0A0A);
+scene.fog = new THREE.FogExp2(0x0A0A0A, 0.045);
+
+// ── Camera ────────────────────────────────────────────────────────
+const isMobile = window.innerWidth <= 768;
+const camera = new THREE.PerspectiveCamera(
+  isMobile ? 52 : 42,
+  window.innerWidth / window.innerHeight,
+  0.05, 200
+);
+camera.position.set(0, 1.6, isMobile ? 6.5 : 5.8);
+
+// ── Controls ──────────────────────────────────────────────────────
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.07;
+controls.enablePan = false;
+controls.minDistance = isMobile ? 4.0 : 3.5;
+controls.maxDistance = isMobile ? 10 : 8;
+// Lock to Y-axis rotation — tight polar range
+controls.minPolarAngle = Math.PI * 0.28;
+controls.maxPolarAngle = Math.PI * 0.42;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.6;
+controls.target.set(0, 0.45, 0);
+controls.update();
+
+// ── Lighting ──────────────────────────────────────────────────────
+// Ambient
+scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+
+// Key light (top-right front)
+const keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
+keyLight.position.set(5, 8, 4);
+keyLight.castShadow = true;
+keyLight.shadow.mapSize.set(2048, 2048);
+keyLight.shadow.camera.near = 0.5;
+keyLight.shadow.camera.far = 30;
+keyLight.shadow.camera.left = -6;
+keyLight.shadow.camera.right = 6;
+keyLight.shadow.camera.top = 6;
+keyLight.shadow.camera.bottom = -6;
+keyLight.shadow.bias = -0.0005;
+scene.add(keyLight);
+
+// Fill light (left, cooler)
+const fillLight = new THREE.DirectionalLight(0xb0ceff, 0.75);
+fillLight.position.set(-6, 3, 3);
+scene.add(fillLight);
+
+// Rim light (back, tight specular edge)
+const rimLight = new THREE.DirectionalLight(0xffffff, 1.6);
+rimLight.position.set(0, 4, -7);
+scene.add(rimLight);
+
+// ── Ground reflection plane ───────────────────────────────────────
+const groundMat = new THREE.MeshStandardMaterial({
+  color: 0x0d0d0d,
+  roughness: 0.15,
+  metalness: 0.85
+});
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(24, 24), groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = 0;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Radial fade vignette on ground
+const fadeGeo = new THREE.PlaneGeometry(24, 24, 1, 1);
+const fadeMat = new THREE.MeshBasicMaterial({
+  color: 0x0A0A0A, transparent: true, opacity: 0.72, depthWrite: false
+});
+const fadePlane = new THREE.Mesh(fadeGeo, fadeMat);
+fadePlane.rotation.x = -Math.PI / 2;
+fadePlane.position.y = 0.002;
+scene.add(fadePlane);
+
+// ── Color system ──────────────────────────────────────────────────
+const PALETTE = {
+  '#1B3A6B': new THREE.Color(0x1B3A6B),
+  '#C0392B': new THREE.Color(0xC0392B),
+  '#F5C518': new THREE.Color(0xF5C518)
+};
+
+var bodyMeshes   = [];
+var fromColor    = new THREE.Color(0x1B3A6B);
+var toColor      = new THREE.Color(0x1B3A6B);
+var currentColor = new THREE.Color(0x1B3A6B);
+var lerpT        = 1;
+var activeHex    = '#1B3A6B';
+var LERP_DUR     = 0.6;  // seconds
+
+// Keywords that identify the car body paint mesh
+var BODY_RE    = /body|exterior|paint|lacquer|car[_\s]?body|carosserie|karosserie|metallic|main|colour/i;
+var EXCLUDE_RE = /wheel|tyre|tire|glass|window|windshield|chrome|light|lamp|head|tail|brake|interior|seat|cabin|dashboard|steering|rubber|plate|number|badge|emblem|trim/i;
+
+function detectBodyMeshes(root) {
+  var named = [];
+  var all   = [];
+
+  root.traverse(function(obj) {
+    if (!obj.isMesh || !obj.geometry) return;
+    var matName  = Array.isArray(obj.material)
+      ? obj.material.map(function(m){ return m.name || ''; }).join(' ')
+      : (obj.material ? obj.material.name || '' : '');
+    var combined = (obj.name + ' ' + matName).toLowerCase();
+    var verts    = obj.geometry.attributes.position
+      ? obj.geometry.attributes.position.count : 0;
+
+    console.log('[cfg] mesh:', obj.name, '| mat:', matName, '| verts:', verts);
+    all.push({ obj: obj, name: combined, verts: verts });
+
+    if (BODY_RE.test(combined) && !EXCLUDE_RE.test(combined)) {
+      named.push(obj);
+    }
+  });
+
+  if (named.length > 0) {
+    console.log('[cfg] Body meshes (by name):', named.map(function(m){ return m.name; }));
+    return named;
+  }
+
+  // Fallback: top-3 largest non-excluded meshes
+  all.sort(function(a, b){ return b.verts - a.verts; });
+  var fallback = all
+    .filter(function(m){ return !EXCLUDE_RE.test(m.name); })
+    .slice(0, 3)
+    .map(function(m){ return m.obj; });
+  console.log('[cfg] Body meshes (fallback):', fallback.map(function(m){ return m.name; }));
+  return fallback;
+}
+
+function applyColor(color) {
+  bodyMeshes.forEach(function(mesh) {
+    var mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    mats.forEach(function(mat) {
+      if (mat && mat.color) mat.color.set(color);
+    });
+  });
+}
+
+// ── GLB loading ───────────────────────────────────────────────────
+var loaderBar = document.getElementById('cfg-loader-bar');
+
+var dracoLoader = new THREE.DRACOLoader();
+dracoLoader.setDecoderPath('./draco/');
+dracoLoader.setDecoderConfig({ type: 'js' });
+
+var gltfLoader = new THREE.GLTFLoader();
+gltfLoader.setDRACOLoader(dracoLoader);
+
+gltfLoader.load(
+  'clio.glb',
+  function onLoad(gltf) {
+    var car = gltf.scene;
+
+    // Center and scale
+    var box    = new THREE.Box3().setFromObject(car);
+    var center = box.getCenter(new THREE.Vector3());
+    var size   = box.getSize(new THREE.Vector3());
+
+    car.position.sub(center);
+    var maxDim = Math.max(size.x, size.y, size.z);
+    if (maxDim > 0) car.scale.setScalar(3.8 / maxDim);
+
+    // Re-compute after scale to sit on ground
+    var box2 = new THREE.Box3().setFromObject(car);
+    car.position.y -= box2.min.y;
+
+    car.traverse(function(obj) {
+      if (obj.isMesh) {
+        obj.castShadow = true;
+        obj.receiveShadow = true;
+      }
+    });
+
+    scene.add(car);
+    bodyMeshes = detectBodyMeshes(car);
+    applyColor(currentColor);
+
+    // Reveal
+    loaderBar.style.width = '100%';
+    setTimeout(function() {
+      var loaderEl = document.getElementById('cfg-loader');
+      loaderEl.classList.add('fade');
+      setTimeout(function(){ loaderEl.style.display = 'none'; }, 800);
+      canvas.classList.add('visible');
+    }, 350);
+  },
+  function onProgress(xhr) {
+    if (xhr.total > 0) {
+      loaderBar.style.width = Math.round(xhr.loaded / xhr.total * 92) + '%';
+    }
+  },
+  function onError(err) {
+    console.error('[cfg] GLB load failed:', err);
+    // Still reveal so user isn't stuck
+    document.getElementById('cfg-loader').classList.add('fade');
+    canvas.classList.add('visible');
+  }
+);
+
+// ── Color picker ─────────────────────────────────────────────────
+var swatches = document.querySelectorAll('.swatch');
+
+swatches.forEach(function(sw) {
+  sw.addEventListener('click', function() {
+    var hex = sw.dataset.hex;
+    if (hex === activeHex) return;
+    activeHex = hex;
+
+    swatches.forEach(function(s){ s.classList.remove('active'); });
+    sw.classList.add('active');
+
+    fromColor.copy(currentColor);
+    toColor.copy(PALETTE[hex]);
+    lerpT = 0;
+  });
+});
+
+// ── Auto-rotate pause on interaction ─────────────────────────────
+var rotateTimer = null;
+
+function pauseRotate() {
+  controls.autoRotate = false;
+  if (rotateTimer) clearTimeout(rotateTimer);
+  rotateTimer = setTimeout(function() {
+    controls.autoRotate = true;
+  }, 3000);
+}
+
+renderer.domElement.addEventListener('pointerdown', pauseRotate, { passive: true });
+
+// ── Resize ────────────────────────────────────────────────────────
+window.addEventListener('resize', function() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ── Render loop ───────────────────────────────────────────────────
+var lastNow = 0;
+
+function tick(now) {
+  requestAnimationFrame(tick);
+
+  var dt = Math.min((now - lastNow) / 1000, 0.05);
+  lastNow = now;
+
+  // Smooth color lerp
+  if (lerpT < 1) {
+    lerpT = Math.min(lerpT + dt / LERP_DUR, 1);
+    var eased = 1 - Math.pow(1 - lerpT, 3); // ease-out cubic
+    currentColor.lerpColors(fromColor, toColor, eased);
+    applyColor(currentColor);
+  }
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
