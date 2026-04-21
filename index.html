@@ -371,11 +371,11 @@ var fCtx = floorCanvas.getContext('2d');
 fCtx.fillStyle = '#E8E9EE';
 fCtx.fillRect(0, 0, 1024, 1024);
 
-// Soft centre glow — smooth hot-spot, no visible rings
+// Crisp centre hot-spot for premium showroom feel
 var spotGrad = fCtx.createRadialGradient(512, 512, 0, 512, 512, 420);
-spotGrad.addColorStop(0,    'rgba(255,255,255,0.45)');
-spotGrad.addColorStop(0.35, 'rgba(255,255,255,0.18)');
-spotGrad.addColorStop(0.75, 'rgba(255,255,255,0.04)');
+spotGrad.addColorStop(0,    'rgba(255,255,255,0.72)');
+spotGrad.addColorStop(0.22, 'rgba(255,255,255,0.38)');
+spotGrad.addColorStop(0.60, 'rgba(255,255,255,0.08)');
 spotGrad.addColorStop(1,    'rgba(255,255,255,0)');
 fCtx.fillStyle = spotGrad;
 fCtx.fillRect(0, 0, 1024, 1024);
@@ -395,9 +395,9 @@ var floorMesh = new THREE.Mesh(
   new THREE.CircleGeometry(26, 96),
   new THREE.MeshStandardMaterial({
     map:             floorTex,
-    roughness:       0.22,   // glossy but not mirror-sharp — blurs HDR stripes
-    metalness:       0.08,
-    envMapIntensity: 0.80
+    roughness:       0.14,   // glossy showroom — smooth sheen without HDR stripe artifacts
+    metalness:       0.10,
+    envMapIntensity: 0.90
   })
 );
 floorMesh.rotation.x = -Math.PI / 2;
@@ -989,8 +989,7 @@ var _prevBgStr = '';
     key.intensity                    = 1.6   * (1 - darkT * 0.82);
     rimLight.intensity               = 0.7   * (1 - darkT * 0.82);
     fillLight.intensity              = 0.25  * (1 - darkT * 0.90);
-    floorMesh.material.envMapIntensity = 0.80 * Math.max(0, 1 - darkT * 0.95);
-    floorMesh.material.roughness       = 0.22;
+    floorMesh.material.envMapIntensity = 0.90 * Math.max(0, 1 - darkT * 0.95);
     var envI = Math.max(0, 1.6 * (1 - darkT * 0.92));
     for (var mi = 0; mi < carMaterials.length; mi++) carMaterials[mi].envMapIntensity = envI;
     var litT = Math.max(0, (darkT - 0.35) / 0.65);
