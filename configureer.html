@@ -356,8 +356,6 @@ gltfLoader.load(
     box.getCenter(ctr);
     car.position.set(-ctr.x, -box.min.y, -ctr.z);
 
-    var GLASS_RE = /glass|window|windshield|windscreen|vitre|ruit/i;
-
     car.traverse(function(child) {
       if (!child.isMesh) return;
       child.castShadow    = true;
@@ -368,7 +366,7 @@ gltfLoader.load(
       var matName = child.material.name || '';
 
       if (matName === 'CarPaint.002') {
-        // Create once (copying maps from first match), share across all paint meshes
+        // Create once (copying all maps from GLB), share across all paint meshes
         if (!paintMat) paintMat = makePaintMat(child.material);
         child.material = paintMat;
 
@@ -394,12 +392,8 @@ gltfLoader.load(
           map: plateTex, roughness: 0.35, metalness: 0.05
         });
 
-      } else if (GLASS_RE.test(matName) || GLASS_RE.test(child.name)) {
-        // Glass: keep original material but tame reflections so it reads as tinted glass
-        child.material.envMapIntensity = 0.35;
-        child.material.roughness       = Math.max(child.material.roughness, 0.08);
-
       } else {
+        // All other materials — same as index.html: just boost env map
         child.material.envMapIntensity = 1.6;
       }
 
