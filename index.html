@@ -233,6 +233,22 @@ setTimeout(function() {
   loadWrap.style.opacity = '1';
 }, 100);
 
+// Unconditional bar animation — starts 400ms after load regardless of XHR events.
+// Cloudflare Pages serves GLB with chunked encoding (no Content-Length), so
+// Three.js progress callbacks never fire. This ensures the bar always moves.
+setTimeout(function() {
+  if (modelReady) return;
+  var t0 = Date.now();
+  (function tick() {
+    if (modelReady) return;
+    var elapsed = (Date.now() - t0) / 1000;
+    var p = Math.min(90 * (1 - Math.exp(-elapsed / 7)), 90);
+    loadFill.style.width = p + '%';
+    loadPct.textContent = 'LADEN ' + Math.round(p) + '%';
+    setTimeout(tick, 60);
+  })();
+}, 400);
+
 let introTimerDone = true; // no minimum wait — reveal fires as soon as car is loaded
 let modelReady     = false;
 let revealDone     = false;
