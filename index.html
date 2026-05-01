@@ -312,11 +312,25 @@ const camera = new THREE.PerspectiveCamera(isMobile ? 46 : 32, VW / VH, 0.05, 30
 camera.position.set(isMobile ? -5.2 : -4.73, isMobile ? 1.3 : 1.16, isMobile ? 2.4 : 2.73);
 camera.lookAt(isMobile ? 2.0 : 0, isMobile ? 0.55 : 0.75, 0);
 
-const renderer = new THREE.WebGLRenderer({
-  canvas, antialias: true, alpha: true,
-  powerPreference: 'high-performance',
-  precision: 'highp'
-});
+var renderer;
+try {
+  renderer = new THREE.WebGLRenderer({
+    canvas, antialias: true, alpha: true,
+    powerPreference: 'high-performance',
+    precision: 'highp'
+  });
+} catch(e) {
+  // WebGL unavailable — show friendly message instead of frozen loading screen
+  loadPct.textContent = 'WebGL niet beschikbaar';
+  loadFill.style.width = '0%';
+  loadBar.style.display = 'none';
+  var noWebGL = document.createElement('div');
+  noWebGL.style.cssText = 'position:absolute;left:50%;transform:translateX(-50%);top:' + (barTop + 28) + 'px;width:min(320px,80vw);text-align:center;font-family:"NouvelR",sans-serif;font-size:12px;color:rgba(255,255,255,0.55);line-height:1.8';
+  noWebGL.innerHTML = 'Jouw browser ondersteunt geen WebGL.<br>Schakel hardwareversnelling in of gebruik een andere browser.';
+  introEl.appendChild(noWebGL);
+  console.error('[webgl] context creation failed:', e);
+  throw e;
+}
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(VW, VH);
 renderer.setClearColor(0x000000, 0);
