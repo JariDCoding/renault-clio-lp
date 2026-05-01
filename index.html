@@ -234,10 +234,11 @@ setTimeout(function() {
 }, 100);
 
 // Unconditional bar animation — starts 400ms after load regardless of XHR events.
-// Cloudflare Pages serves GLB with chunked encoding (no Content-Length), so
-// Three.js progress callbacks never fire. This ensures the bar always moves.
+// barAnimActive flag prevents the XHR progress callback from fighting this animation.
+var barAnimActive = false;
 setTimeout(function() {
   if (modelReady) return;
+  barAnimActive = true;
   var t0 = Date.now();
   (function tick() {
     if (modelReady) return;
@@ -675,11 +676,11 @@ gltfLoader.load('clio.glb',
           pctx.lineWidth = 4;
           pctx.strokeRect(8, 8, 624, 144);
           pctx.fillStyle = '#fff';
-          pctx.font = 'bold 60px "NouvelR",Arial,sans-serif';
+          pctx.font = 'bold 46px "NouvelR",Arial,sans-serif';
           pctx.textAlign = 'center';
           pctx.textBaseline = 'middle';
-          pctx.letterSpacing = '3px';
-          pctx.fillText('TIMECHAMBER', 320, 82);
+          pctx.letterSpacing = '2px';
+          pctx.fillText('TIMECHAMBER x JDC', 320, 82);
           var plateTex = new THREE.CanvasTexture(pcv);
           plateTex.flipY = false;
           plateTex.needsUpdate = true;
@@ -759,6 +760,7 @@ gltfLoader.load('clio.glb',
     }
   },
   function(xhr) {
+    if (barAnimActive) return; // unconditional animation is running — don't fight it
     if (xhr.total > 0) {
       var rawPct = Math.round(xhr.loaded / xhr.total * 100);
       var pct = Math.min(rawPct, 95);
