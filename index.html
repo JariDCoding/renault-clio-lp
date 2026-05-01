@@ -742,25 +742,46 @@ gltfLoader.load('clio.glb',
         loadPct.style.textAlign = 'center';
         loadPct.style.color = 'rgba(255,255,255,0.65)';
         loadWrap.style.width = Math.min(VW * 0.50, 420) + 'px';
-        // Slowly crawl bar 95→99% during Draco decompression so it doesn't look frozen
         var crawlStart = Date.now();
         var crawlInterval = setInterval(function() {
           if (modelReady) { clearInterval(crawlInterval); return; }
-          var elapsed = (Date.now() - crawlStart) / 4000; // 4s crawl window
+          var elapsed = (Date.now() - crawlStart) / 4000;
           loadFill.style.width = Math.min(95 + elapsed * 4, 99) + '%';
         }, 80);
       } else {
         loadPct.textContent = 'LADEN ' + pct + '%';
       }
+    } else {
+      // No Content-Length header (chunked transfer) — animate bar so it never looks frozen
+      if (!loadCrawlStarted) {
+        loadCrawlStarted = true;
+        loadPct.textContent = 'LADEN\u2026';
+        var crawlT = Date.now();
+        var crawlId = setInterval(function() {
+          if (modelReady) { clearInterval(crawlId); return; }
+          var elapsed = (Date.now() - crawlT) / 1000;
+          var p = Math.min(90 * (1 - Math.exp(-elapsed / 6)), 90);
+          loadFill.style.width = p + '%';
+        }, 60);
+      }
     }
   },
   function(err) {
     console.error('[car] GLB load failed:', err);
-    // Unstick the loading screen even if car failed
     modelReady = true;
     tryReveal();
   }
 );
+
+// Hard timeout: if model hasn't loaded after 25s, reveal anyway
+var loadCrawlStarted = false;
+setTimeout(function() {
+  if (!modelReady) {
+    console.warn('[car] load timeout — forcing reveal');
+    modelReady = true;
+    tryReveal();
+  }
+}, 25000);
 
 var clock = new THREE.Clock();
 var totalTime = 0;
