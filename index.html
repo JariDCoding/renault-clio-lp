@@ -233,21 +233,27 @@ setTimeout(function() {
   loadWrap.style.opacity = '1';
 }, 100);
 
-// Unconditional bar animation — starts 400ms after load regardless of XHR events.
-// barAnimActive flag prevents the XHR progress callback from fighting this animation.
+// Smooth loading bar via requestAnimationFrame — no setTimeout drift.
+// barAnimActive prevents the XHR progress callback from fighting this.
 var barAnimActive = false;
 setTimeout(function() {
   if (modelReady) return;
   barAnimActive = true;
-  var t0 = Date.now();
-  (function tick() {
+  var t0 = performance.now();
+  var lastPct = 0;
+  function tick(now) {
     if (modelReady) return;
-    var elapsed = (Date.now() - t0) / 1000;
+    var elapsed = (now - t0) / 1000;
     var p = Math.min(90 * (1 - Math.exp(-elapsed / 7)), 90);
-    loadFill.style.width = p + '%';
-    loadPct.textContent = 'LADEN ' + Math.round(p) + '%';
-    setTimeout(tick, 60);
-  })();
+    // Only update DOM when value changes by ≥0.3% to avoid micro-repaints
+    if (p - lastPct >= 0.3) {
+      lastPct = p;
+      loadFill.style.width = p.toFixed(1) + '%';
+      loadPct.textContent = 'LADEN ' + Math.round(p) + '%';
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 }, 400);
 
 let introTimerDone = true; // no minimum wait — reveal fires as soon as car is loaded
